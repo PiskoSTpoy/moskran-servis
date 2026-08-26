@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <!-- Волна 38: карточка для og:image/twitter:image. Тот же дизайн-код сайта
+       (брутализм чёрно-жёлтый, Archivo Black/Inter, жёсткая офсетная тень —
+       см. .park-card:hover в BaseLayout.astro). SVG, не PNG: в этой сессии
+       нет инструмента растровой генерации изображений. Честная оговорка —
+       поддержка SVG для og:image у разных площадок неровная (Telegram обычно
+       рендерит нормально, VK/WhatsApp менее предсказуемо) — задокументировано
+       в deploy-plan.md как известное ограничение, апгрейд на PNG остаётся
+       открытой задачей, если появится инструмент генерации растра. -->
+  <rect width="1200" height="630" fill="#0D0D0D"/>
+  <rect x="0" y="0" width="1200" height="14" fill="#FFD600"/>
+  <rect x="0" y="616" width="1200" height="14" fill="#FFD600"/>
+
+  <!-- Крюк-иконка, крупный вариант фавиконки -->
+  <g transform="translate(90,150) scale(4.2)">
+    <rect x="6" y="8" width="3" height="20" fill="#FFD600"/>
+    <path d="M9 10 L27 6 L27 9 L9 13 Z" fill="#FFD600"/>
+    <line x1="25" y1="7.5" x2="25" y2="19" stroke="#FFD600" stroke-width="1.6"/>
+    <path d="M25 19 q0 4 -3.4 4 q-3 0 -3 -2.6" fill="none" stroke="#FFD600" stroke-width="2.2" stroke-linecap="round"/>
+  </g>
+
+  <text x="430" y="270" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="74" fill="#F5F5F0" letter-spacing="1">МОСКРАН</text>
+  <text x="430" y="345" font-family="Arial, Helvetica, sans-serif" font-weight="900" font-size="74" fill="#FFD600" letter-spacing="1">-СЕРВИС</text>
+
+  <text x="430" y="410" font-family="Arial, Helvetica, sans-serif" font-weight="600" font-size="30" fill="#9B9994">Аренда автокрана и башенного крана в Москве</text>
+
+  <rect x="430" y="460" width="2" height="46" fill="#FFD600"/>
+  <text x="454" y="495" font-family="Arial, Helvetica, sans-serif" font-weight="700" font-size="34" fill="#F5F5F0">+7 (903) 269-00-60</text>
+</svg>

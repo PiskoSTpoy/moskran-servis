@@ -1,0 +1,117 @@
+/* Локальные шрифты. Файлы .woff2 скачаны tools/selfhost_fonts.py из официального
+   CSS Google Fonts, запрос: Inter wght 400;500;600;700 + Russo One, display=swap.
+   Полный URL источника намеренно НЕ оставлен в комментарии: этот файл уезжает в
+   dist как есть, а контроль перехода на self-hosting — grep по домену Google
+   Fonts во всей собранной папке, и упоминание домена даже внутри комментария
+   сбивало бы проверку (посетителю комментарий тоже уезжает и неотличим от
+   живого подключения). Точный запрос — в шапке tools/selfhost_fonts.py и в
+   content-plan.md.
+
+   ЗАЧЕМ SELF-HOSTING (критерий fonts-selfhost-woff2):
+   два лишних соединения к стороннему origin в критическом пути первого текста,
+   плюс IP каждого посетителя уходит зарубежному сервису — лишний повод
+   объясняться по трансграничной передаче ПДн.
+
+   ─── КИРИЛЛИЦА В ЗАГОЛОВКАХ: ИСПРАВЛЕНО ────────────────────────────────────
+   До этой волны --display был 'Archivo Black'. У этой гарнитуры кириллического
+   сабсета не существует в природе — Google отдаёт для неё только latin и
+   latin-ext. Замер прямо на проде: ширина русской строки в 48 px у Archivo
+   Black — 479 px, у заведомо несуществующего шрифта — те же 479 px, совпадение
+   до пикселя (латиница при этом работала: 557 против 484). То есть КАЖДЫЙ
+   русский заголовок сайта рисовался не заголовочной гарнитурой, а системным
+   запасным sans-serif, и весь чёрно-жёлтый бруталистский характер на
+   заголовках просто отсутствовал. Ошибку не ловит ни один обычный линтер:
+   файл отдаётся со статусом 200, ошибок в консоли нет, вёрстка не разъезжается.
+
+   Замена — Russo One: тяжёлый квадратный гротеск индустриального характера с
+   ПОЛНОЙ кириллицей (проверено по cmap: 61 из 61 буквы). Метрики другие,
+   поэтому кегли/интерлиньяж/трекинг заголовков пересчитаны — см. BaseLayout.astro.
+
+   ─── ПОЧЕМУ У INTER ОДИН ФАЙЛ НА СУБСЕТ, А НЕ ЧЕТЫРЕ ───────────────────────
+   Google отдаёт Inter вариативным: на каждый из запрошенных весов 400/500/600/700
+   приходит один и тот же файл (проверено md5 — четыре байт-в-байт одинаковых
+   копии на субсет). С отдельным @font-face на вес браузер качал бы страницу с
+   тремя весами тремя запросами по одному и тому же содержимому. Поэтому вес
+   задан диапазоном 400 700, ось wght браузер выставляет сам. Итог: 19 файлов
+   на 711 КБ ужаты до 7 файлов на 194 КБ без потери ни одного начертания.
+
+   У Russo One вариативности нет и начертание ровно одно (400) — там файл на
+   субсет и так один.
+
+   unicode-range сохранён как у источника: браузер не качает латиницу, если на
+   странице только кириллица, и наоборот. font-display: swap — текст виден
+   сразу, а не после загрузки шрифта. */
+
+/* ── Inter (основной текст, --sans), вариативный, wght 400…700 ───────────── */
+
+/* cyrillic-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-cyrillic-ext-normal.woff2') format('woff2');
+  unicode-range: U+0460-052F, U+1C80-1C8A, U+20B4, U+2DE0-2DFF, U+A640-A69F, U+FE2E-FE2F;
+}
+
+/* cyrillic */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-cyrillic-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+/* latin-ext */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin-ext-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* ── Russo One (заголовки и числа, --display), единственное начертание 400 ── */
+
+/* cyrillic */
+@font-face {
+  font-family: 'Russo One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/russo-one-cyrillic-400-normal.woff2') format('woff2');
+  unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+
+/* latin-ext */
+@font-face {
+  font-family: 'Russo One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/russo-one-latin-ext-400-normal.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
+/* latin */
+@font-face {
+  font-family: 'Russo One';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/russo-one-latin-400-normal.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
