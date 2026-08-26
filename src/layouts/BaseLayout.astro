@@ -336,15 +336,32 @@ const cur = (href: string) =>
     .nav__row { display: flex; justify-content: space-between; align-items: center; height: 74px; max-width: var(--maxw); margin: 0 auto; padding-inline: var(--pad); }
     .brand { font-family: var(--display); font-size: var(--t-lead); text-decoration: none; }
     .brand span { color: var(--yellow); }
-    .nav__links { display: flex; gap: 22px; font-size: var(--t-md); font-weight: 600; }
-    .nav__links a { text-decoration: none; padding-block: 4px; border-bottom: 2px solid transparent; }
-    .nav__links a:hover { color: var(--yellow); }
-    /* Указатель текущей страницы. До этой волны его не было ни в шапке, ни
+    /* Волна 130: пункты меню как таблетки-плашки (по образцу site-02),
+       а не подчёркивание. Текущая страница получает мягкую жёлтую заливку
+       и закруглённый контур вместо плоской линии снизу — тот же язык, что
+       у --hazard-рамки на фото главной, только без диагоналей: здесь пункт
+       навигации должен читаться как переключатель раздела, а не как ссылка
+       в тексте. Радиус 999px — сознательно не заводим отдельный токен ради
+       одного места использования. */
+    .nav__links { display: flex; gap: 2px; font-size: var(--t-sm); font-weight: 600; }
+    .nav__links a {
+      text-decoration: none;
+      padding: 7px 10px;
+      border-radius: 999px;
+      border: 1.5px solid transparent;
+      transition: background-color .15s ease, border-color .15s ease, color .15s ease;
+      white-space: nowrap;
+    }
+    .nav__links a:hover { color: var(--yellow); background: rgba(255,214,0,.08); }
+    /* Указатель текущей страницы. До волны 12 его не было ни в шапке, ни
        в мобильном меню: находясь в справочнике, посетитель не видел в
        навигации, где он. aria-current проставляется в разметке из
        единственного места (сравнение path в BaseLayout), поэтому 144
-       страницы править не пришлось. */
-    .nav__links a[aria-current="page"] { color: var(--yellow); border-bottom-color: var(--yellow); }
+       страницы править не пришлось. Волна 130 сменила приём с подчёркивания
+       на плашку: rgba(255,214,0,.14) — тот же --yellow, разведённый до
+       мягкой заливки на тёмном фоне (аналог --accent-soft у site-02, но
+       без отдельного токена под светлую тему, которой здесь нет). */
+    .nav__links a[aria-current="page"] { color: var(--yellow); background: rgba(255,214,0,.14); border-color: rgba(255,214,0,.4); }
     .nav__mobile-panel a[aria-current="page"] { color: var(--yellow); background: var(--bg); box-shadow: inset 3px 0 0 0 var(--yellow); }
 
     .section { padding-block: var(--sp-md); }
@@ -541,7 +558,13 @@ const cur = (href: string) =>
     }
     .nav__mobile-panel a:last-child { border-bottom: none; color: var(--yellow); }
     .nav__mobile-panel a:hover { background: var(--bg); color: var(--yellow); }
-    @media (max-width: 760px) {
+    /* Волна 130: порог поднят с 760px до 900px (тот же порог, что у site-02).
+       Причина не косметика — измерение: 6 плашек + телефон занимают 840px
+       даже после ужатия отступов, а порог 760px укладывал их в контейнер
+       уже с горизонтальным переполнением страницы на 800px. Само мобильное
+       меню (details/summary) от ширины точки переключения не зависит —
+       ничего в нём не меняется, кроме момента появления. */
+    @media (max-width: 900px) {
       .nav__links { display: none; }
       .nav__mobile { display: block; }
     }
@@ -878,8 +901,17 @@ const cur = (href: string) =>
   <header class="nav">
     <div class="nav__row">
       <a class="brand" href="/">МОСКРАН<span>-СЕРВИС</span></a>
+      {/* Волна 130: в десктопной шапке было 2 раздела из 10 — «Парк техники»,
+          «Разборы задач», «Документы», «Вопросы» существовали только в
+          мобильном меню, посетитель с широким экраном их не видел без
+          прокрутки до футера. Добавлены 4 пункта — тот же набор, что уже
+          был в мобильной панели ниже, второй список не заводили. */}
       <nav class="nav__links" aria-label="Основная навигация">
         <a href="/spravochnik/" aria-current={cur('/spravochnik/')}>Справочник</a>
+        <a href="/park/" aria-current={cur('/park/')}>Парк техники</a>
+        <a href="/keysy/" aria-current={cur('/keysy/')}>Разборы задач</a>
+        <a href="/documents/" aria-current={cur('/documents/')}>Документы</a>
+        <a href="/faq/" aria-current={cur('/faq/')}>Вопросы</a>
         <a href="/proverka-dokumentov/" aria-current={cur('/proverka-dokumentov/')}>Проверка документов</a>
         <a href="tel:+79032690060">+7 (903) 269-00-60</a>
       </nav>
