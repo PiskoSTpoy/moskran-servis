@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sources from '../../../../components/Sources.astro';
+import PriceDisclaimer from '../../../../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../../../../lib/prices';
+
+const title = 'Автокран 40–50 тонн в СВАО — логистика по Ярославскому шоссе';
+const description = 'Тяжёлый автокран 40–50 тонн в СВАО Москвы: монтаж оборудования на складских и логистических объектах вдоль Ярославского направления. Расчёт онлайн.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Автокраны 40–50 тонн', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/' },
+    { '@type': 'ListItem', position: 3, name: 'СВАО', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/svao/' },
+  ],
+};
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service', serviceType: 'Аренда автокрана 40-50 тонн в СВАО',
+  provider: { '@id': 'https://moskran-servis.ru/#organization' }, areaServed: 'СВАО, Москва',
+};
+---
+<BaseLayout title={title} description={description} path="/uslugi/arenda-avtokrana-40-50-tonn/svao/" ldExtra={[breadcrumbLd, serviceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/uslugi/arenda-avtokrana-40-50-tonn/">Автокраны 40–50 тонн</a><span>/</span><span>СВАО</span>
+  </nav>
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Автокран 40–50 т · Северо-Восточный округ</span>
+      <h1>Автокран 40–50 тонн в СВАО</h1>
+      <p>Ярославское шоссе — не только основная вылетная магистраль округа, но и коридор с концентрацией складских и логистических комплексов на всём протяжении от Ростокина до Лианозова, где регулярно требуется тяжёлый класс техники для монтажа стеллажных систем и погрузочного оборудования.</p>
+    </div>
+  </section>
+  <section class="section wrap" style="padding-top:0;padding-bottom:clamp(28px,4vw,44px)">
+    <table class="adm">
+      <caption>Карточка допуска: автокран 40–50 т на складском объекте СВАО</caption>
+      <thead><tr><th scope="col">Требование</th><th scope="col">Что это значит здесь</th><th scope="col">Основание</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Требование">Допуск машины в город</td><td data-label="Что это значит здесь">Автокран этого класса заведомо тяжелее 3,5 т разрешённой массы, поэтому в границах МКАД он едет по пропуску грузового каркаса и с регистрацией в РНИС. Вопрос подрядчику здесь не «есть ли кран 50 т», а «есть ли у этой машины действующий пропуск нужной зоны».</td><td data-label="Основание">Грузовой каркас Москвы</td></tr>
+        <tr><td data-label="Требование">Что смотреть в паспорте</td><td data-label="Что это значит здесь">Не паспортный максимум, а строку грузовой характеристики на том вылете, на котором машина реально встанет: у стеллажного пролёта подъехать вплотную обычно нельзя, и 50 т на бумаге превращаются в существенно меньшую цифру на вылете 14–18 м.</td><td data-label="Основание">Паспорт ПС</td></tr>
+        <tr><td data-label="Требование">Какое освидетельствование действует</td><td data-label="Что это значит здесь">Частичное — не реже одного раза в 12 месяцев, полное — не реже одного раза в 3 года; результат и срок следующего записаны в паспорте машины.</td><td data-label="Основание">ФНП №461, п. 165 и 189</td></tr>
+        <tr><td data-label="Требование">Что подписывают на площадке</td><td data-label="Что это значит здесь">Наряд-допуск, если стрела или груз оказываются ближе 30 м к крайнему проводу воздушной линии — вдоль Ярославского шоссе и полосы отвода железной дороги это рабочая ситуация, а не редкость.</td><td data-label="Основание">ФНП №461, п. 112</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Логистические комплексы вдоль Ярославского шоссе</h2>
+    <p>Складские и логистические объекты вдоль трассы — регулярный источник заявок на монтаж крупногабаритного оборудования: стеллажных конструкций большой высоты, элементов сортировочных линий, вентиляционного и холодильного оборудования складов. Такие объекты обычно рассчитаны на приём тяжёлой техники изначально — широкие проезды и площадки для разгрузки фур предполагают достаточное пространство и для установки крана этого класса на выносные опоры, но конкретную геометрию площадки уточняем по каждому объекту отдельно, поскольку логистические комплексы сильно отличаются по планировке.</p>
+
+    <h2 style="margin:36px 0 18px">Территория ВДНХ и Останкино — за пределами типовых задач этого класса</h2>
+    <p>В отличие от логистического коридора вдоль Ярославского шоссе, зона ВДНХ и Останкинского телецентра в этой же части округа (подробнее — на <a href="/geo/svao/">гео-странице СВАО</a>) требует отдельного согласования доступа техники из-за статуса федеральных объектов и близости охраняемой инфраструктуры связи — для тяжёлого класса техники это означает более длительный срок согласования, чем для складского объекта на удалении от этой зоны.</p>
+
+    <h2 style="margin:36px 0 18px">Нагрузка на грунт на складских площадках</h2>
+    <p>Территории современных логистических комплексов обычно имеют капитальное твёрдое покрытие, рассчитанное на нагрузку от постоянного движения фур — это, как правило, упрощает установку крана на выносные опоры по сравнению с площадками без капитального покрытия. Тем не менее для полной загрузки крана на максимальном вылете нагрузку на конкретную точку установки всё равно оцениваем индивидуально, а не полагаемся на общее качество покрытия территории.</p>
+
+    <h2 style="margin:36px 0 18px">Цена для объекта в СВАО</h2>
+    <p>Базовая ставка — от 3 900 ₽/час (см. <a href="/#zayavka" style="color:var(--yellow)">ориентир по стоимости на главной</a>), стандартная для этого класса по Москве. Для объектов ближе к МКАД по Ярославскому шоссе логистическая надбавка обсуждается индивидуально; для площадок рядом с ВДНХ/Останкино закладываем дополнительное время на согласование доступа.</p>
+    <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Что уточняем до выезда именно здесь</h2>
+    <p>Складская площадка выглядит готовой к тяжёлой технике, но опоры крана давят на пятно в разы сильнее колеса фуры. Правила прямо запрещают ставить кран на свеженасыпанный неутрамбованный грунт и на площадку с уклоном больше указанного в паспорте — на территориях, где недавно шла отсыпка или перекладка сетей, это ограничение снимает половину «очевидно ровных» мест под опоры.</p>
+    <p>Второй вопрос — режим опирания: если руководство по эксплуатации не разрешает иное, машина ставится на все выносные опоры, а не на две со стороны груза. Для узкого проезда между корпусами это означает, что точку установки надо выбирать до выезда, по схеме, а не решать на месте.</p>
+    <Sources
+      checked="12.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 111 — откос котлована, п. 112 — 30 м до провода и наряд-допуск, п. 138 — пуск башенного крана, п. 165 и 189 — освидетельствование и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Единый транспортный портал Москвы — грузовой каркас, пропуск для ТС с разрешённой массой свыше 3,5 т и регистрация в РНИС', href: 'https://transport.mos.ru/gruzoviki/perevod_ckad' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .adm { width: 100%; border-collapse: collapse; margin: 6px 0 0; font-size: var(--t-md); }
+  .adm caption { text-align: left; font-family: var(--display); text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .adm th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .adm td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .adm td:first-child { width: 24%; font-weight: 700; }
+  .adm td:last-child { width: 24%; color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 760px) {
+    .adm, .adm tbody, .adm tr, .adm td { display: block; width: 100%; }
+    .adm thead { display: none; }
+    .adm tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .adm td { border: none; padding: 5px 0; }
+    .adm td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .adm td:first-child, .adm td:last-child { width: 100%; }
+  }
+</style>
+</BaseLayout>

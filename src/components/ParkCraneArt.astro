@@ -1,0 +1,409 @@
+---
+// Волна 26: технический чертёж модели парка. Партия A.
+//
+// Переиспользует визуальный язык, заданный на главной (src/pages/index.astro,
+// Волна 19, .lookup__art): пунктирная рамка чертежа, угловые L-образные
+// регистрационные метки жёлтым, размерная линия с засечками на концах,
+// чёрно-жёлтая палитра токенов сайта (--ink/--yellow/--muted/--line-strong/
+// --bg-2). Плюс правило чертёжной подачи: только острые углы
+// (stroke-linejoin: miter, stroke-linecap: square), решётчатая стрела как
+// два рельса + зигзаг-раскосы (см. latticeParts ниже) — тот же приём,
+// которым рисуется мачта башенного крана, здесь развёрнут под углом
+// стрелы гусеничного крана.
+//
+// Это НЕ фотография техники (см. секцию «Чего вы не найдёте на этом сайте»
+// на главной) — честная схема силуэта по характеристикам, уже указанным
+// текстом на странице модели. Компонент не хранит собственных цифр: все
+// подписи приходят пропами и обязаны совпадать с таблицей характеристик
+// на той же странице — фактчек делает страница, не эта иллюстрация.
+//
+// Один параметризуемый компонент вместо семи независимых SVG: гарантирует
+// одинаковую толщину линий/цвета/рамку на всех карточках парка, а разные
+// силуэты получаются за счёт геометрии (число осей, тип хода, угол и длина
+// стрелы, наличие гуська) — так же, как реальные краны в этом классе
+// отличаются друг от друга.
+interface Gusek {
+  label: string;
+  kink?: number; // угол излома гуська относительно стрелы, градусы
+  len?: number; // длина гуська в единицах viewBox (визуальная, не масштаб)
+}
+
+interface Props {
+  capacity: string; // бейдж грузоподъёмности, напр. «25 т»
+  kind?: 'mobile' | 'crawler';
+  axles?: number; // для mobile: 3–5
+  wheelsLarge?: boolean; // вездеходные шины покрупнее (Урал 6×6)
+  boomAngle?: number; // угол стрелы к горизонту, градусы
+  boomLen?: number; // длина стрелы в единицах viewBox
+  boomHalfWidth?: number; // полутолщина стрелы у основания
+  gusek?: Gusek;
+  ropeStrands?: number; // число ниток каната у крюка (визуально ограничено 4)
+  chassisLabel?: string; // подпись шасси, снизу слева
+  boomDimLabel?: string; // подпись горизонтальной размерной линии (длина/вылет стрелы)
+  heightDimLabel?: string; // подпись вертикальной размерной линии (высота подъёма)
+  noteNearTip?: string; // короткая заметка у оголовка стрелы
+  noteNearHook?: string; // короткая заметка у крюка/груза
+  noteNearBase?: string; // короткая заметка у поворотной платформы/базы
+  caption?: string;
+}
+
+const {
+  capacity,
+  kind = 'mobile',
+  axles = 3,
+  wheelsLarge = false,
+  boomAngle = 58,
+  boomLen = 220,
+  boomHalfWidth = 9,
+  gusek,
+  ropeStrands = 1,
+  chassisLabel,
+  boomDimLabel,
+  heightDimLabel,
+  noteNearTip,
+  noteNearHook,
+  noteNearBase,
+  caption = 'Схема силуэта по характеристикам этой модели, а не фотография техники — реальных снимков парка на сайте нет и не будет.',
+} = Astro.props;
+
+const VBW = 760;
+const VBH = 320;
+const PAD = 8;
+const groundY = 248;
+
+// ── Рамка чертежа: пунктир + четыре угловые регистрационные метки ──────────
+const leg = 24;
+const corners = [
+  `M${PAD},${PAD + leg} V${PAD} H${PAD + leg}`,
+  `M${VBW - PAD - leg},${PAD} H${VBW - PAD} V${PAD + leg}`,
+  `M${VBW - PAD},${VBH - PAD - leg} V${VBH - PAD} H${VBW - PAD - leg}`,
+  `M${PAD + leg},${VBH - PAD} H${PAD} V${VBH - PAD - leg}`,
+].join(' ');
+
+// ── Тригонометрия стрелы: общая для mobile (сплошная сужающаяся) и crawler
+//    (решётчатая, рельсы + раскосы) — см. комментарий в шапке файла. ────────
+const rad = (deg: number) => (deg * Math.PI) / 180;
+function polar(px: number, py: number, angleDeg: number, len: number) {
+  const r = rad(angleDeg);
+  return { x: px + Math.cos(r) * len, y: py - Math.sin(r) * len };
+}
+function dirOf(angleDeg: number) {
+  const r = rad(angleDeg);
+  return { x: Math.cos(r), y: -Math.sin(r) };
+}
+function perpOf(angleDeg: number) {
+  const r = rad(angleDeg);
+  return { x: Math.sin(r), y: Math.cos(r) };
+}
+function fmt(n: number) {
+  return n.toFixed(1);
+}
+
+// ── Размерная линия с засечками на концах — мотив с главной (.lookup__art),
+//    там она под документом; здесь под стрелой и сбоку от высоты подъёма. ──
+function dimH(x1: number, x2: number, y: number, tick = 6) {
+  return `M${fmt(x1)},${fmt(y - tick)} L${fmt(x1)},${fmt(y + tick)} M${fmt(x1)},${fmt(y)} L${fmt(x2)},${fmt(y)} M${fmt(x2)},${fmt(y - tick)} L${fmt(x2)},${fmt(y + tick)}`;
+}
+function dimV(y1: number, y2: number, x: number, tick = 6) {
+  return `M${fmt(x - tick)},${fmt(y1)} L${fmt(x + tick)},${fmt(y1)} M${fmt(x)},${fmt(y1)} L${fmt(x)},${fmt(y2)} M${fmt(x - tick)},${fmt(y2)} L${fmt(x + tick)},${fmt(y2)}`;
+}
+
+// ── Ходовая часть ────────────────────────────────────────────────────────
+const chassisX0 = 70;
+const chassisW = kind === 'mobile' ? 250 + (axles - 3) * 40 : 0;
+const wheelR = wheelsLarge ? 17 : 13;
+const chassisBottomY = groundY - wheelR - 3;
+const chassisH = 28;
+const chassisY = chassisBottomY - chassisH;
+const wheelXs =
+  kind === 'mobile'
+    ? Array.from({ length: axles }, (_, i) => {
+        const margin = 28;
+        const span = chassisW - margin * 2;
+        const step = axles > 1 ? span / (axles - 1) : 0;
+        return chassisX0 + margin + i * step;
+      })
+    : [];
+
+const cabW = 40;
+const cabH = 34;
+const cabX = chassisX0 + 4;
+const cabY = chassisY - cabH + 4;
+
+// ── Гусеничный ход: шестиугольник с острыми торцами (не скруглённый —
+//    соблюдаем правило «только прямые углы», как HeroCraneArt). ────────────
+const trackX0 = 90;
+const trackLen = 300;
+const trackH = 34;
+const trackY0 = groundY - trackH;
+const slant = 16;
+const trackPts = [
+  [trackX0 + slant, trackY0],
+  [trackX0 + trackLen - slant, trackY0],
+  [trackX0 + trackLen, trackY0 + trackH / 2],
+  [trackX0 + trackLen - slant, trackY0 + trackH],
+  [trackX0 + slant, trackY0 + trackH],
+  [trackX0, trackY0 + trackH / 2],
+]
+  .map((p) => p.join(','))
+  .join(' ');
+const treadXs = Array.from({ length: 8 }, (_, i) => trackX0 + 24 + i * ((trackLen - 48) / 7));
+
+const turretW = 150;
+const turretH = 30;
+const turretX = trackX0 + trackLen * 0.24;
+const turretY = trackY0 - turretH - 2;
+const cwtW = 40;
+const cwtH = 26;
+
+// ── Точка поворота (пивот) стрелы: у mobile — на шасси, у crawler — на
+//    правом краю поворотной платформы. ──────────────────────────────────
+const pivot =
+  kind === 'mobile'
+    ? { x: chassisX0 + chassisW * 0.32, y: chassisY - 2 }
+    : { x: turretX + turretW * 0.82, y: turretY };
+
+const dir = dirOf(boomAngle);
+const perp = perpOf(boomAngle);
+const boomHalfTip = Math.max(2.4, boomHalfWidth * 0.32);
+const tip = polar(pivot.x, pivot.y, boomAngle, boomLen);
+
+let effTip = tip;
+let gusekLine: { from: { x: number; y: number }; to: { x: number; y: number } } | null = null;
+if (gusek) {
+  const gAngle = boomAngle + (gusek.kink ?? 10);
+  const gLen = gusek.len ?? 50;
+  const gTip = polar(tip.x, tip.y, gAngle, gLen);
+  gusekLine = { from: tip, to: gTip };
+  effTip = gTip;
+}
+
+// ── Стрела mobile: сплошной сужающийся четырёхугольник + два стыка секций
+//    (визуальный намёк на телескопирование, не число секций — оно не
+//    заявлено в тексте страниц и не выдумывается здесь). ──────────────────
+const boomQuad = [
+  { x: pivot.x + perp.x * boomHalfWidth, y: pivot.y + perp.y * boomHalfWidth },
+  { x: tip.x + perp.x * boomHalfTip, y: tip.y + perp.y * boomHalfTip },
+  { x: tip.x - perp.x * boomHalfTip, y: tip.y - perp.y * boomHalfTip },
+  { x: pivot.x - perp.x * boomHalfWidth, y: pivot.y - perp.y * boomHalfWidth },
+]
+  .map((p) => `${fmt(p.x)},${fmt(p.y)}`)
+  .join(' ');
+const jointLines = [0.38, 0.7].map((t) => {
+  const cx = pivot.x + dir.x * boomLen * t;
+  const cy = pivot.y + dir.y * boomLen * t;
+  const hw = boomHalfWidth + (boomHalfTip - boomHalfWidth) * t;
+  return `M${fmt(cx + perp.x * hw)},${fmt(cy + perp.y * hw)} L${fmt(cx - perp.x * hw)},${fmt(cy - perp.y * hw)}`;
+});
+
+// ── Стрела crawler: решётчатая — два рельса + зигзаг-раскосы, тот же приём,
+//    что и на мачте башенного крана, перенесённый на наклонную ось. ─────────
+function latticeParts(px: number, py: number, angleDeg: number, len: number, halfBase: number, halfTip: number, segments: number) {
+  const d = dirOf(angleDeg);
+  const p = perpOf(angleDeg);
+  const rail1: { x: number; y: number }[] = [];
+  const rail2: { x: number; y: number }[] = [];
+  const zig: { x: number; y: number }[] = [];
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+    const hw = halfBase + (halfTip - halfBase) * t;
+    const cx = px + d.x * len * t;
+    const cy = py + d.y * len * t;
+    const p1 = { x: cx + p.x * hw, y: cy + p.y * hw };
+    const p2 = { x: cx - p.x * hw, y: cy - p.y * hw };
+    rail1.push(p1);
+    rail2.push(p2);
+    zig.push(i % 2 === 0 ? p1 : p2);
+  }
+  return { rail1, rail2, zig };
+}
+const lattice = kind === 'crawler' ? latticeParts(pivot.x, pivot.y, boomAngle, boomLen, 15, 5, 8) : null;
+const ptsToStr = (pts: { x: number; y: number }[]) => pts.map((p) => `${fmt(p.x)},${fmt(p.y)}`).join(' ');
+
+// ── Канат, крюк, груз — жёлтый акцент, как трос/груз в HeroCraneArt. ───────
+const ropeLen = 46;
+const loadY = Math.min(effTip.y + ropeLen, groundY - 14);
+const loadW = 24;
+const loadH = 16;
+const strands = Math.min(Math.max(ropeStrands, 1), 4);
+const strandTops = Array.from({ length: strands }, (_, i) => {
+  const offset = strands > 1 ? (i - (strands - 1) / 2) * 6 : 0;
+  return { x: effTip.x + offset, y: effTip.y + 4 };
+});
+const strandConverge = { x: effTip.x, y: loadY - 14 };
+
+// ── Размерные линии: горизонтальная — вылет/длина стрелы, вертикальная —
+//    высота подъёма. Рисуются только если страница передала подпись —
+//    компонент не восполняет отсутствующие в тексте цифры. ─────────────────
+// dimHY близко к земле (не к нижней рамке): подпись размерной линии не
+// сталкивается с подписью шасси в нижнем левом углу (chassisLabel).
+// dimVX отнесена от правого верхнего угла, чтобы не пересекаться с
+// угловой регистрационной меткой чертежа. ──────────────────────────────
+const dimHY = groundY + 14;
+const dimVX = VBW - PAD - 40;
+---
+
+<div class="craneart" aria-hidden="true">
+  <svg class="craneart__svg" viewBox={`0 0 ${VBW} ${VBH}`} role="img" focusable="false" preserveAspectRatio="xMidYMid meet">
+    <rect x={PAD} y={PAD} width={VBW - 2 * PAD} height={VBH - 2 * PAD} class="ca-frame" />
+    <path d={corners} class="ca-corner" />
+    <line x1={PAD + 16} y1={groundY} x2={VBW - PAD - 16} y2={groundY} class="ca-ground" />
+
+    <rect x={PAD + 16} y={PAD + 16} width="108" height="40" class="ca-badge-bg" />
+    <text x={PAD + 16 + 54} y={PAD + 16 + 27} class="ca-badge-text" text-anchor="middle">{capacity}</text>
+
+    {kind === 'mobile' ? (
+      <g>
+        {/* опоры */}
+        <path d={`M${chassisX0 + 18},${chassisBottomY} L${chassisX0 - 22},${chassisBottomY + 16}`} class="ca-thin" />
+        <rect x={chassisX0 - 28} y={chassisBottomY + 13} width="10" height="6" class="ca-foot" />
+        <path d={`M${chassisX0 + chassisW - 18},${chassisBottomY} L${chassisX0 + chassisW + 22},${chassisBottomY + 16}`} class="ca-thin" />
+        <rect x={chassisX0 + chassisW + 18} y={chassisBottomY + 13} width="10" height="6" class="ca-foot" />
+
+        {/* шасси + кабина */}
+        <rect x={chassisX0} y={chassisY} width={chassisW} height={chassisH} class="ca-chassis" />
+        <rect x={cabX} y={cabY} width={cabW} height={cabH} class="ca-chassis" />
+
+        {/* колёса */}
+        {wheelXs.map((cx) => (
+          <g>
+            <circle cx={cx} cy={groundY - wheelR} r={wheelR} class="ca-wheel" />
+            <circle cx={cx} cy={groundY - wheelR} r={wheelR * 0.36} class="ca-wheel-hub" />
+          </g>
+        ))}
+
+        {/* стрела */}
+        <polygon points={boomQuad} class="ca-boom" />
+        {jointLines.map((d) => (
+          <path d={d} class="ca-boom-joint" />
+        ))}
+      </g>
+    ) : (
+      <g>
+        {/* гусеницы */}
+        <polygon points={trackPts} class="ca-track" />
+        {treadXs.map((x) => (
+          <line x1={x} y1={trackY0 + 5} x2={x - 6} y2={trackY0 + trackH - 5} class="ca-track-tread" />
+        ))}
+        {/* стрелка «рама сужается для трала» — над гусеницей, у концов хода */}
+        <path d={`M${trackX0 + 46},${trackY0 - 12} L${trackX0 + 70},${trackY0 - 12} M${trackX0 + 70},${trackY0 - 12} L${trackX0 + 63},${trackY0 - 16} M${trackX0 + 70},${trackY0 - 12} L${trackX0 + 63},${trackY0 - 8}`} class="ca-arrow" />
+        <path d={`M${trackX0 + trackLen - 46},${trackY0 - 12} L${trackX0 + trackLen - 70},${trackY0 - 12} M${trackX0 + trackLen - 70},${trackY0 - 12} L${trackX0 + trackLen - 63},${trackY0 - 16} M${trackX0 + trackLen - 70},${trackY0 - 12} L${trackX0 + trackLen - 63},${trackY0 - 8}`} class="ca-arrow" />
+
+        {/* поворотная платформа + противовес + кабина оператора */}
+        <rect x={turretX} y={turretY} width={turretW} height={turretH} class="ca-turret" />
+        <rect x={turretX - cwtW + 6} y={turretY + turretH - cwtH} width={cwtW} height={cwtH} class="ca-cwt" />
+        <rect x={pivot.x - 30} y={turretY + turretH - 6} width="30" height="22" class="ca-chassis" />
+
+        {/* решётчатая стрела: рельсы + раскосы */}
+        {lattice && (
+          <g>
+            <polyline points={ptsToStr(lattice.rail1)} class="ca-lattice-rail" />
+            <polyline points={ptsToStr(lattice.rail2)} class="ca-lattice-rail" />
+            <polyline points={ptsToStr(lattice.zig)} class="ca-lattice-zig" />
+          </g>
+        )}
+      </g>
+    )}
+
+    {/* гусёк — пунктир: навесное, не всегда установленное звено */}
+    {gusekLine && (
+      <g>
+        <path d={`M${fmt(gusekLine.from.x)},${fmt(gusekLine.from.y)} L${fmt(gusekLine.to.x)},${fmt(gusekLine.to.y)}`} class="ca-gusek" />
+        {gusek && (
+          <text x={fmt((gusekLine.from.x + gusekLine.to.x) / 2 + 8)} y={fmt((gusekLine.from.y + gusekLine.to.y) / 2 - 8)} class="ca-note">{gusek.label}</text>
+        )}
+      </g>
+    )}
+
+    {/* канат / крюк / груз — жёлтый акцент */}
+    {strands === 1 ? (
+      <line x1={effTip.x} y1={effTip.y} x2={effTip.x} y2={loadY - loadH / 2} class="ca-rope" />
+    ) : (
+      <g>
+        {strandTops.map((p) => (
+          <line x1={p.x} y1={p.y} x2={strandConverge.x} y2={strandConverge.y} class="ca-rope-thin" />
+        ))}
+        <line x1={strandConverge.x} y1={strandConverge.y} x2={effTip.x} y2={loadY - loadH / 2} class="ca-rope" />
+      </g>
+    )}
+    <rect x={effTip.x - loadW / 2} y={loadY - loadH / 2} width={loadW} height={loadH} class="ca-load" />
+
+    {/* размерные линии — только если страница передала подпись */}
+    {boomDimLabel && (
+      <g>
+        <path d={dimH(pivot.x, effTip.x, dimHY)} class="ca-dim" />
+        <text x={(pivot.x + effTip.x) / 2} y={dimHY + 18} class="ca-dimlabel" text-anchor="middle">{boomDimLabel}</text>
+      </g>
+    )}
+    {heightDimLabel && (
+      <g>
+        <path d={dimV(groundY, Math.min(tip.y, effTip.y), dimVX)} class="ca-dim" />
+        <text x={dimVX - 10} y={(groundY + Math.min(tip.y, effTip.y)) / 2 + 4} class="ca-dimlabel" text-anchor="end">{heightDimLabel}</text>
+      </g>
+    )}
+
+    {/* точечные заметки — рядом с уже нарисованными узлами */}
+    {noteNearTip && <text x={tip.x - 6} y={tip.y - 12} class="ca-note" text-anchor="end">{noteNearTip}</text>}
+    {noteNearHook && <text x={effTip.x + loadW / 2 + 10} y={loadY + 4} class="ca-note">{noteNearHook}</text>}
+    {/* На crawler заметка сдвинута к противовесу (левая треть платформы) —
+        правая часть уходит под решётчатую стрелу, которая поднимается от
+        pivot (правый край платформы) вверх-вправо. */}
+    {noteNearBase && (
+      <text x={kind === 'mobile' ? pivot.x : turretX + turretW * 0.24} y={kind === 'mobile' ? chassisY - 44 : turretY - 12} class="ca-note" text-anchor="middle">
+        {noteNearBase}
+      </text>
+    )}
+
+    {chassisLabel && <text x={PAD + 16} y={VBH - PAD - 14} class="ca-chassislabel">{chassisLabel}</text>}
+  </svg>
+  {caption && <p class="craneart__cap">{caption}</p>}
+</div>
+
+<style>
+  .craneart {
+    margin: 20px 0 8px;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    padding: clamp(10px, 2.4vw, 18px);
+    overflow-x: auto;
+  }
+  /* min-width держит текст на схеме читаемым на узких экранах: карточка
+     скроллится сама (её ширина не завязана на ширину вьюпорта), а страница
+     в целом горизонтально не переполняется — тот же приём, что у широких
+     таблиц. */
+  .craneart__svg { display: block; width: 100%; min-width: 600px; height: auto; }
+
+  .craneart__cap { margin-top: 10px; font-size: var(--t-sm); color: var(--muted); max-width: 68ch; }
+
+  .craneart :is(.ca-frame) { fill: none; stroke: var(--line-strong); stroke-width: 1.4; stroke-dasharray: 2 7; }
+  .craneart :is(.ca-corner) { fill: none; stroke: var(--yellow); stroke-width: 2.5; stroke-linecap: square; }
+  .craneart .ca-ground { stroke: var(--line-strong); stroke-width: 1.4; }
+
+  .craneart .ca-badge-bg { fill: var(--yellow); }
+  .craneart .ca-badge-text { fill: var(--bg); font-family: var(--display); font-weight: 400; font-size: 19px; text-transform: uppercase; dominant-baseline: middle; }
+
+  .craneart :is(.ca-chassis, .ca-boom, .ca-track, .ca-turret) { fill: var(--bg-2); stroke: var(--ink); stroke-width: 2.5; stroke-linejoin: miter; }
+  .craneart .ca-cwt { fill: var(--muted); stroke: var(--ink); stroke-width: 2; }
+  .craneart .ca-wheel { fill: var(--bg); stroke: var(--ink); stroke-width: 2.5; }
+  .craneart .ca-wheel-hub { fill: var(--muted); }
+  .craneart .ca-boom-joint { stroke: var(--muted); stroke-width: 1.2; }
+  .craneart .ca-thin { stroke: var(--muted); stroke-width: 1.1; fill: none; }
+  .craneart .ca-foot { fill: var(--muted); }
+  .craneart .ca-track-tread { stroke: var(--muted); stroke-width: 1; opacity: 0.55; }
+  .craneart .ca-arrow { stroke: var(--muted); stroke-width: 1.3; fill: none; }
+  .craneart .ca-lattice-rail { stroke: var(--ink); stroke-width: 2; fill: none; }
+  .craneart .ca-lattice-zig { stroke: var(--muted); stroke-width: 1.1; fill: none; }
+
+  .craneart .ca-gusek { stroke: var(--muted); stroke-width: 2; stroke-dasharray: 5 4; fill: none; }
+  .craneart :is(.ca-rope, .ca-rope-thin) { stroke: var(--yellow); }
+  .craneart .ca-rope { stroke-width: 1.6; }
+  .craneart .ca-rope-thin { stroke-width: 1.1; opacity: 0.75; }
+  .craneart .ca-load { fill: var(--bg-2); stroke: var(--yellow); stroke-width: 2.2; }
+
+  .craneart .ca-dim { stroke: var(--line-strong); stroke-width: 1.4; fill: none; }
+  .craneart .ca-dimlabel { fill: var(--muted); font-family: var(--sans); font-size: 13px; }
+  .craneart .ca-note { fill: var(--ink); font-family: var(--sans); font-size: 13px; }
+  .craneart .ca-chassislabel { fill: var(--muted); font-family: var(--sans); font-size: 13px; }
+
+  .craneart :is(line, polyline, polygon, path, rect) { vector-effect: non-scaling-stroke; }
+</style>

@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sources from '../../../../components/Sources.astro';
+import PriceDisclaimer from '../../../../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../../../../lib/prices';
+
+const title = 'Автокран 40–50 тонн в ВАО — промзоны Перово и Новогиреево';
+const description = 'Тяжёлый автокран 40–50 тонн в ВАО Москвы: монтаж крупногабаритного оборудования на промышленных территориях Перово, Новогиреево, Ивановское. Расчёт онлайн.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Автокраны 40–50 тонн', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/' },
+    { '@type': 'ListItem', position: 3, name: 'ВАО', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/vao/' },
+  ],
+};
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service', serviceType: 'Аренда автокрана 40-50 тонн в ВАО',
+  provider: { '@id': 'https://moskran-servis.ru/#organization' }, areaServed: 'ВАО, Москва',
+};
+---
+<BaseLayout title={title} description={description} path="/uslugi/arenda-avtokrana-40-50-tonn/vao/" ldExtra={[breadcrumbLd, serviceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/uslugi/arenda-avtokrana-40-50-tonn/">Автокраны 40–50 тонн</a><span>/</span><span>ВАО</span>
+  </nav>
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Автокран 40–50 т · Восточный округ</span>
+      <h1>Автокран 40–50 тонн в ВАО</h1>
+      <p>Восточная часть округа сохраняет значительную долю советских промышленных и складских территорий в районах Перово, Новогиреево и Ивановское — здесь регулярно требуется тяжёлый класс техники для монтажа крупногабаритного производственного оборудования.</p>
+    </div>
+  </section>
+  <section class="section wrap" style="padding-top:0;padding-bottom:clamp(28px,4vw,44px)">
+    <table class="adm">
+      <caption>Карточка допуска: автокран 40–50 т на промышленной площадке ВАО</caption>
+      <thead><tr><th scope="col">Требование</th><th scope="col">Что это значит здесь</th><th scope="col">Основание</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Требование">Два разных пропуска</td><td data-label="Что это значит здесь">Пропуск на территорию предприятия и городской пропуск для грузового транспорта — это разные документы с разными сроками, и их регулярно путают. Первый оформляет служба безопасности объекта, второй нужен самой машине, чтобы доехать.</td><td data-label="Основание">Грузовой каркас Москвы и регламент объекта</td></tr>
+        <tr><td data-label="Требование">Что смотреть в паспорте</td><td data-label="Что это значит здесь">Массу машины в транспортном положении и нагрузку на ось: на старых заводских проездах, эстакадах и перекрытиях это определяющий параметр, а не грузоподъёмность.</td><td data-label="Основание">Паспорт ПС</td></tr>
+        <tr><td data-label="Требование">Какое освидетельствование действует</td><td data-label="Что это значит здесь">Частичное — раз в 12 месяцев, полное — раз в 3 года, с записью в паспорте. Служба безопасности предприятия обычно требует показать именно эту страницу, а не сертификат в целом.</td><td data-label="Основание">ФНП №461, п. 165 и 189</td></tr>
+        <tr><td data-label="Требование">Что подписывают на площадке</td><td data-label="Что это значит здесь">Наряд-допуск: на действующих промплощадках воздушные линии часто идут прямо над внутренними проездами, и 30 м до крайнего провода набираются мгновенно.</td><td data-label="Основание">ФНП №461, п. 112</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Промышленные площадки Перово и Новогиреева</h2>
+    <p>На производственных и складских территориях этой части округа заявки чаще связаны с монтажом или демонтажем тяжёлого технологического оборудования — компрессорных станций, крупных ёмкостей, элементов вентиляционных систем промышленного масштаба — чем со строительно-монтажными работами на жилых объектах. Вес единичного элемента здесь нередко превышает 12–15 тонн, что делает 40–50-тонный класс типовым выбором, а не избыточным запасом. Подъездные пути на части старых промышленных территорий уже, чем на современных логистических комплексах, — уточняем габариты проезда для техники этого класса заранее по конкретному адресу. Общая картина по округу, включая парки и логистику по шоссе, — на <a href="/geo/vao/">гео-странице ВАО</a>.</p>
+
+    <h2 style="margin:36px 0 18px">Пропускной режим на предприятиях</h2>
+    <p>Большинство производственных площадок Перово и Новогиреева — действующие предприятия с собственным контрольно-пропускным режимом, оформление допуска техники на территорию идёт по правилам конкретного предприятия. Это тот же порядок, что и для других промышленных зон города — он целиком разобран на странице услуги <a href="/uslugi/kran-na-rezhimnyy-obekt/" style="color:var(--yellow)">«Кран на режимный объект»</a>. Применительно к тяжёлому классу техники добавляется отдельный пункт: часть предприятий отдельно согласовывает допустимую нагрузку на внутренние проезды территории для техники такой массы.</p>
+
+    <h2 style="margin:36px 0 18px">Логистика по Шоссе Энтузиастов и Щёлковскому шоссе</h2>
+    <p>Обе магистрали — основные маршруты подачи техники в эту часть округа, с интенсивным трафиком в часы пик. Для тяжёлого класса техники, где транспортное положение крана обычно укладывается в стандартные габариты без спецразрешения, ключевое логистическое ограничение — не сами магистрали, а отдельные путепроводы с ограничением по нагрузке на конкретных участках; проверяем маршрут заранее для объектов, удалённых от основных трасс.</p>
+
+    <h2 style="margin:36px 0 18px">Цена для объекта в ВАО</h2>
+    <p>Базовая ставка — от 3 900 ₽/час (см. <a href="/#zayavka" style="color:var(--yellow)">ориентир по стоимости на главной</a>), стандартная для этого класса по Москве. Для промышленных объектов с пропускным режимом закладываем время на оформление допуска техники. Для площадок с ограниченным подъездом — уточняем габариты проезда по фото или видео до выезда техники.</p>
+    <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Что уточняем до выезда именно здесь</h2>
+    <p>На реконструируемых промышленных территориях типичная ловушка — обратная засыпка пазух после демонтажа фундаментов и перекладки сетей. Внешне это ровная площадка, по норме — тот самый свеженасыпанный неутрамбованный грунт, на который ставить кран нельзя. Подбор идёт в обратном порядке: сначала допустимая нагрузка на пятно, потом самая лёгкая машина, которой хватит вылета.</p>
+    <p>Отдельно спрашиваем про уклон: паспорт каждой машины задаёт предельное значение, и заводские площадки с уклоном под водоотвод в него не всегда укладываются.</p>
+    <Sources
+      checked="12.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 111 — откос котлована, п. 112 — 30 м до провода и наряд-допуск, п. 138 — пуск башенного крана, п. 165 и 189 — освидетельствование и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Единый транспортный портал Москвы — грузовой каркас, пропуск для ТС с разрешённой массой свыше 3,5 т и регистрация в РНИС', href: 'https://transport.mos.ru/gruzoviki/perevod_ckad' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .adm { width: 100%; border-collapse: collapse; margin: 6px 0 0; font-size: var(--t-md); }
+  .adm caption { text-align: left; font-family: var(--display); text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .adm th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .adm td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .adm td:first-child { width: 24%; font-weight: 700; }
+  .adm td:last-child { width: 24%; color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 760px) {
+    .adm, .adm tbody, .adm tr, .adm td { display: block; width: 100%; }
+    .adm thead { display: none; }
+    .adm tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .adm td { border: none; padding: 5px 0; }
+    .adm td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .adm td:first-child, .adm td:last-child { width: 100%; }
+  }
+</style>
+</BaseLayout>

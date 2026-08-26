@@ -1,0 +1,370 @@
+---
+// ─────────────────────────────────────────────────────────────────────────────
+// ИНСТРУМЕНТ САЙТА. Волна 16.
+//
+// Раньше главным инструментом был пошаговый визард-калькулятор: два шага,
+// точки прогресса, карточки тоннажа — ровно то же, что стоит на восьми
+// остальных сайтах сети, только в другой палитре. Он считал деньги.
+//
+// Здесь инструмент считает НЕ деньги, а пробелы в комплекте документов —
+// потому что дату выезда в Москве срывает не цена, а недостающая бумага с
+// чужой подписью. Один экран: слева условия объекта, справа то, что уже есть
+// на руках; на выходе — чего не хватает, кто это подписывает и сколько это
+// занимает. Список отсортирован по сроку: сверху то, с чего надо начинать сегодня.
+//
+// Никакого визарда: ни .calc__progress, ни шагов, ни автоперехода. Всё видно
+// сразу, JS только скрывает неактуальные строки и собирает итог.
+// ─────────────────────────────────────────────────────────────────────────────
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sources from '../../components/Sources.astro';
+
+const title = 'Проверка комплекта документов для крана в Москве';
+const description = 'Чек-лист допуска техники: паспорт ПС, освидетельствование, приказы ответственных, наряд-допуск у ЛЭП, ордер ОАТИ, пропуск. Показывает, чего не хватает.';
+
+const CHECKED = '12.08.2026';
+
+// Условия объекта. Каждое включает свою группу требований — и ни одно не
+// включает лишнего: перечень условий взят из того, что реально встречается
+// на московской заявке, а не из абстрактного «всё, что бывает».
+const conditions = [
+  { id: 'kpp', label: 'Объект с контрольно-пропускным режимом (КПП, охрана, единый пропуск генподрядчика)' },
+  { id: 'lep', label: 'Кран или груз ближе 30 м к крайнему проводу воздушной линии' },
+  { id: 'kotlovan', label: 'Опоры ставятся у откоса котлована или траншеи' },
+  { id: 'proezd', label: 'Занимается проезжая часть или тротуар города' },
+  { id: 'metro', label: 'Объект в технической зоне метрополитена' },
+  { id: 'noch', label: 'Работы попадают на 23:00–07:00' },
+  { id: 'bashnya', label: 'Башенный кран: монтаж на объекте' },
+  { id: 'strah', label: 'Объект требует полис страхования ответственности владельца ОПО' },
+];
+
+// Требования. `when: null` — базовый комплект, нужен всегда.
+// `days` — рабочих дней «на чужой стороне»: столько ждать подписи, если
+// документа нет. По ним же сортируется итог: сверху самое долгое.
+type Req = {
+  id: string; title: string; when: string | null; days: number; daysText: string;
+  why: string; who: string; href?: string;
+};
+const reqs: Req[] = [
+  {
+    id: 'passport', title: 'Паспорт ПС с записью о последнем освидетельствовании', when: null, days: 0,
+    daysText: 'либо есть, либо машина не выходит',
+    why: 'Результаты технического освидетельствования записываются в паспорт подъёмного сооружения с указанием срока следующего (ФНП №461, п. 189). Паспорт без свежей записи означает, что срок освидетельствования проверить нечем.',
+    who: 'запись вносит инженерно-технический работник, ответственный за производственный контроль',
+    href: '/spravochnik/pasport-krana/',
+  },
+  {
+    id: 'osvid', title: 'Действующее техническое освидетельствование', when: null, days: 0,
+    daysText: 'нельзя докупить в день выезда',
+    why: 'Частичное освидетельствование — не реже одного раза в 12 месяцев, полное — не реже одного раза в 3 года (ФНП №461, п. 165). Полное включает статические испытания грузом 125 % от паспортной грузоподъёмности и динамические — 110 % (пп. 171, 179).',
+    who: 'проводит ответственный за производственный контроль при участии ответственного за содержание ПС (п. 167)',
+    href: '/spravochnik/tehnicheskoe-osvidetelstvovanie-krana/',
+  },
+  {
+    id: 'operator', title: 'Документ о квалификации оператора ПС и результат проверки знаний', when: null, days: 0,
+    daysText: 'проверяется до выезда',
+    why: 'К управлению подъёмным сооружением допускается работник соответствующей квалификации с действующей проверкой знаний. Это тот документ, который заказчик вправе спросить прямо, а подрядчик — показать без разговоров.',
+    who: 'эксплуатирующая организация; проверку знаний проводит её комиссия',
+    href: '/spravochnik/attestaciya-kranovshchika/',
+  },
+  {
+    id: 'prikazy', title: 'Приказы о назначении трёх ответственных', when: null, days: 0,
+    daysText: 'внутренний документ подрядчика',
+    why: 'Ответственный за осуществление производственного контроля, ответственный за содержание ПС в работоспособном состоянии и ответственный за безопасное производство работ с применением ПС — три разные роли, назначаемые приказом эксплуатирующей организации.',
+    who: 'руководитель эксплуатирующей организации',
+    href: '/spravochnik/otvetstvennyy-za-bezopasnoe-proizvodstvo/',
+  },
+  {
+    id: 'ppr', title: 'ППР или технологическая карта на работы краном', when: null, days: 2,
+    daysText: '1–2 дня, если делается под ваш объект',
+    why: 'Схема установки крана, привязка опор, границы опасной зоны и порядок работ. Для типовой разгрузки хватает технологической карты, для стеснённой площадки, работы у здания или над проезжей частью нужен полноценный ППР.',
+    who: 'разрабатывает проектная служба, утверждает технический руководитель',
+    href: '/spravochnik/ppr-dlya-krana/',
+  },
+  {
+    id: 'dogovor', title: 'Договор, путевой лист и ОСАГО на шасси', when: null, days: 1,
+    daysText: 'до выезда техники',
+    why: 'Договор фиксирует состав услуги и границу ответственности до выезда, а не после. Путевой лист и полис на шасси — обычные документы автомобиля, но именно их чаще всего забывают проверить на КПП.',
+    who: 'подрядчик',
+    href: '/documents/dogovor-arendy/',
+  },
+  {
+    id: 'propusk', title: 'Пропуск на технику и бригаду', when: 'kpp', days: 5,
+    daysText: '1–2 рабочих дня обычно, до 3–5 для объектов с повышенными требованиями',
+    why: 'Пропуск оформляется по требованиям конкретного объекта: списки людей, данные машины, иногда согласование службы безопасности. Требования запрашиваются в момент заявки, а не за день до выезда.',
+    who: 'служба безопасности объекта по заявке подрядчика',
+    href: '/documents/propusk-na-obekt/',
+  },
+  {
+    id: 'naryad', title: 'Наряд-допуск на работу вблизи воздушной линии', when: 'lep', days: 5,
+    daysText: 'зависит от владельца линии, планируйте несколько дней',
+    why: 'Установка и работа крана стрелового типа ближе 30 м от крайнего провода воздушной линии или воздушной электрической сети напряжением более 50 В допускается только по наряду-допуску (ФНП №461, п. 112). Расстояние считается до вертикальной плоскости проекции провода на землю в любом положении стрелы и груза.',
+    who: 'наряд выдаёт эксплуатирующая организация, условия согласуются с владельцем линии',
+    href: '/spravochnik/rabota-krana-ryadom-s-lep/',
+  },
+  {
+    id: 'kotlovan', title: 'Схема установки с расстоянием до откоса', when: 'kotlovan', days: 1,
+    daysText: 'считается вместе с ППР',
+    why: 'Краны стрелового типа у края откоса котлована устанавливаются с соблюдением расстояний из приложения №1 к ФНП №461 (п. 111). Расстояние зависит от глубины выемки и грунта — «на глаз от края» здесь не работает.',
+    who: 'проектная служба, подписывает ответственный за безопасное производство работ',
+    href: '/spravochnik/rasstoyanie-ot-kotlovana/',
+  },
+  {
+    id: 'order', title: 'Ордер на установку временных ограждений (ОАТИ)', when: 'proezd', days: 10,
+    daysText: 'городская процедура, закладывайте от недели',
+    why: 'Установка временных ограждений и размещение временных объектов в Москве оформляется ордером по постановлению Правительства Москвы от 19.05.2015 №299-ПП. Кран, занявший тротуар или полосу, — это как раз временное занятие городской территории.',
+    who: 'Объединение административно-технических инспекций города Москвы',
+    href: '/spravochnik/soglasovanie-perekrytiya-proezda/',
+  },
+  {
+    id: 'podd', title: 'Согласование временной схемы организации движения', when: 'proezd', days: 10,
+    daysText: 'единой публичной цифры по сроку нет — уточняется в ЦОДД',
+    why: 'Если перекрывается проезжая часть, нужна согласованная временная схема движения: расстановка знаков, ограждений, объезд. Это отдельная процедура, не часть ордера.',
+    who: 'ЦОДД и владелец дороги',
+    href: '/spravochnik/soglasovanie-perekrytiya-proezda/',
+  },
+  {
+    id: 'metro', title: 'Согласование работ в технической зоне метрополитена', when: 'metro', days: 15,
+    daysText: 'самая долгая позиция списка',
+    why: 'Техническая зона действующих линий метрополитена — 40 м в обе стороны от оси, строящихся — 20 м; ближе 10 м работы ведутся по совместному решению с метрополитеном (приказ Москомархитектуры от 13.03.2006 №52).',
+    who: 'ГУП «Московский метрополитен» и Москомархитектура',
+    href: '/documents/',
+  },
+  {
+    id: 'noch', title: 'Основание для работ в ночное время', when: 'noch', days: 3,
+    daysText: 'решается заранее, иначе смену переносят',
+    why: 'В Москве шумные строительные и погрузочно-разгрузочные работы в жилой застройке ограничены с 23:00 до 07:00 (Закон г. Москвы от 12.07.2002 №42). Нарушение — статья 3.13 КоАП города Москвы: для юридических лиц от 40 000 до 80 000 рублей.',
+    who: 'согласуется с заказчиком объекта и учитывается в графике',
+    href: '/spravochnik/rabota-krana-zimoy/',
+  },
+  {
+    id: 'fundament', title: 'Акт освидетельствования скрытых работ по основанию и пуск в работу', when: 'bashnya', days: 10,
+    daysText: 'этап монтажа, не день выезда',
+    why: 'Башенный кран ставится на подготовленное основание, работы по которому закрываются актом освидетельствования скрытых работ. Пуск в работу после установки башенного крана на объекте принимается комиссией с участием представителя Ростехнадзора (ФНП №461, п. 138).',
+    who: 'комиссия эксплуатирующей организации с представителем надзорного органа',
+    href: '/spravochnik/akt-osvidetelstvovaniya-fundamenta/',
+  },
+  {
+    id: 'osopo', title: 'Полис страхования ответственности владельца ОПО', when: 'strah', days: 2,
+    daysText: 'оформляется быстро, но не в день выезда',
+    why: 'Обязательное страхование гражданской ответственности владельца опасного объекта — отдельный полис, который часто запрашивает служба заказчика вместе с пропуском.',
+    who: 'страховая компания по договору с эксплуатирующей организацией',
+    href: '/spravochnik/strahovanie-otvetstvennosti-opo/',
+  },
+];
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Проверка комплекта документов', item: 'https://moskran-servis.ru/proverka-dokumentov/' },
+  ],
+};
+const howToLd = {
+  '@context': 'https://schema.org', '@type': 'HowTo',
+  name: 'Как проверить комплект документов для работы крана на московском объекте',
+  description: 'Порядок проверки: условия объекта → базовый комплект по ФНП №461 → городские согласования → перечень недостающего.',
+  inLanguage: 'ru-RU',
+  step: [
+    { '@type': 'HowToStep', name: 'Опишите объект', text: 'Отметьте условия: пропускной режим, близость воздушной линии, котлован, занятие проезжей части, зона метрополитена, ночные работы, башенный кран.' },
+    { '@type': 'HowToStep', name: 'Отметьте, что уже есть', text: 'Пройдите по списку требований и отметьте документы, которые есть на руках или подтверждены подрядчиком.' },
+    { '@type': 'HowToStep', name: 'Разберите недостающее', text: 'Оставшиеся позиции отсортированы по сроку получения: начинайте с самых долгих городских согласований, а не с внутренних приказов.' },
+  ],
+};
+---
+<BaseLayout title={title} description={description} path="/proverka-dokumentov/" ldExtra={[breadcrumbLd, howToLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><span>Проверка комплекта документов</span>
+  </nav>
+
+  <section class="pd-head wrap">
+    <span class="eyebrow">Инструмент · один экран</span>
+    <h1>Проверка комплекта документов</h1>
+    <p class="pd-lead">Базовый комплект допуска крана в Москве — 6 документов, которые нужны всегда, независимо от объекта; ещё 9 позиций добавляются условиями площадки, и включаются они восемью галочками слева. Самая длинная позиция списка — согласование работ в технической зоне метрополитена, самые быстрые закрываются за 1–2 рабочих дня, поэтому список недостающего сортируется по сроку, а не по алфавиту.</p>
+    <p class="pd-lead">Заявку на кран в Москве срывает не цена, а недостающая бумага с чужой подписью: ордер, наряд-допуск, пропуск. Этот инструмент не считает деньги — он показывает, чего не хватает лично вам, кто это подписывает и сколько это занимает. Список недостающего сортируется по сроку: сверху то, с чем нужно начинать сегодня, а не то, что удобнее сделать первым.</p>
+    <p class="pd-lead pd-lead--muted">Ничего никуда не отправляется: расчёт целиком в браузере, поля не сохраняются. Перечень условий — по московской практике; нормативная часть — по ФНП №461 и городским актам, реквизиты в конце страницы.</p>
+  </section>
+
+  <section class="pd wrap">
+    <div class="pd__grid">
+      <div class="pd__cond">
+        <h2 class="pd__h">1. Какой у вас объект</h2>
+        <p class="pd__note">От этого зависит, какие строки вообще появятся во второй колонке. Ничего не отметили — останется базовый комплект, который нужен всегда.</p>
+        <ul class="pd-checks">
+          {conditions.map((c) => (
+            <li>
+              <label class="pd-check">
+                <input type="checkbox" data-cond={c.id} />
+                <span>{c.label}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div class="pd__reqs">
+        <h2 class="pd__h">2. Что уже есть на руках</h2>
+        <p class="pd__note">Отмечайте только то, что реально видели или подтвердил подрядчик. «Наверное, есть» — это не отметка, а именно тот случай, ради которого делается проверка.</p>
+        <ul class="pd-reqs" id="pd-reqs">
+          {reqs.map((r) => (
+            <li class="pd-req" data-req={r.id} data-when={r.when ?? ''} data-days={r.days} hidden={r.when !== null}>
+              <label class="pd-check pd-check--req">
+                <input type="checkbox" data-have={r.id} />
+                <span class="pd-req__title">{r.title}</span>
+              </label>
+              <p class="pd-req__why">{r.why}</p>
+              <p class="pd-req__who"><b>Подписывает:</b> {r.who}</p>
+              <p class="pd-req__days"><b>Срок:</b> {r.daysText}</p>
+              {r.href && <a class="pd-req__link" href={r.href}>Разбор в справочнике →</a>}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </div>
+
+    <div class="pd-out" id="pd-out" role="status" aria-live="polite">
+      <h2 class="pd-out__h" id="pd-out-h">Не хватает: считаем…</h2>
+      <ol class="pd-out__list" id="pd-out-list"></ol>
+      <p class="pd-out__hint" id="pd-out-hint"></p>
+    </div>
+
+    <p class="pd-tail">Инструмент отвечает на вопрос «чего нет», а не «можно ли работать»: решение о допуске техники принимает эксплуатирующая организация, а по городской части — соответствующий орган. Если по вашей позиции список показывает пробел, это повод задать вопрос подрядчику до подтверждения даты, а не после приезда крана.</p>
+
+    <Sources
+      checked={CHECKED}
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 111 — расстояние до откоса, п. 112 — 30 м и наряд-допуск, п. 138 — пуск в работу башенного крана, п. 165–189 — освидетельствование и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Постановление Правительства Москвы от 19.05.2015 №299-ПП — ордер на установку временных ограждений', href: 'https://www.mos.ru/' },
+        { text: 'Закон г. Москвы от 12.07.2002 №42 и ст. 3.13 КоАП города Москвы — ночные шумные работы и штрафы' },
+        { text: 'Приказ Москомархитектуры от 13.03.2006 №52 — техническая зона метрополитена 40 / 20 / 10 м' },
+      ]}
+      note="Сроки в днях — практический ориентир по московским заявкам, а не норматив: единой публичной цифры по сроку рассмотрения временной схемы движения нет, и мы её не выдумываем. Нормативные ссылки (пункты ФНП и реквизиты московских актов) — проверяемые."
+    />
+  </section>
+</main>
+
+<style>
+  .pd-head { padding-block: clamp(18px, 3vw, 30px) 0; }
+  .pd-head h1 { font-size: var(--t-h1); margin-top: 12px; }
+  .pd-lead { margin-top: 16px; max-width: 76ch; color: var(--muted); }
+  .pd-lead--muted { font-size: var(--t-md); }
+
+  .pd { padding-block: clamp(24px, 4vw, 40px); }
+  .pd__grid { display: grid; grid-template-columns: 340px 1fr; gap: 28px; align-items: start; }
+  .pd__h { font-size: var(--t-lead); }
+  .pd__note { margin-top: 8px; color: var(--muted); font-size: var(--t-md); }
+
+  .pd-checks { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 2px; }
+  .pd-check { display: flex; gap: 11px; align-items: flex-start; padding: 10px 12px; background: var(--bg-2); border: 1px solid var(--line-strong); cursor: pointer; min-height: 44px; font-size: var(--t-md); }
+  .pd-check:hover { border-color: var(--line-strong); }
+  .pd-check input { width: 20px; height: 20px; accent-color: var(--yellow); flex-shrink: 0; margin-top: 1px; }
+  .pd-check--req { border: none; background: none; padding: 0; }
+  .pd-check--req:hover { border: none; }
+
+  .pd-reqs { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .pd-req { background: var(--bg-2); padding: 16px 18px; }
+  .pd-req__title { font-weight: 700; font-size: var(--t-md); }
+  .pd-req__why { margin-top: 8px; color: var(--muted); font-size: var(--t-md); }
+  .pd-req__who, .pd-req__days { margin-top: 6px; font-size: var(--t-md); color: var(--muted); }
+  .pd-req__who b, .pd-req__days b { color: var(--ink); font-weight: 600; }
+  .pd-req__link { display: inline-block; margin-top: 8px; font-size: var(--t-sm); font-weight: 700; color: var(--yellow); text-decoration: none; }
+  .pd-req__link:hover { text-decoration: underline; }
+  .pd-req.is-ok { opacity: .55; }
+
+  .pd-out { margin-top: 28px; border: 2px solid var(--yellow); background: var(--bg-2); padding: 22px 24px; }
+  .pd-out__h { font-size: var(--t-h2); }
+  .pd-out__list { margin: 16px 0 0; padding-left: 22px; display: grid; gap: 10px; }
+  .pd-out__list li { font-size: var(--t-md); }
+  .pd-out__list b { color: var(--yellow); }
+  .pd-out__list span { display: block; color: var(--muted); font-size: var(--t-md); margin-top: 2px; }
+  .pd-out__hint { margin-top: 14px; font-size: var(--t-md); color: var(--muted); }
+  .pd-tail { margin-top: 24px; max-width: 78ch; font-size: var(--t-md); color: var(--muted); }
+
+  @media (max-width: 900px) { .pd__grid { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  // Проверка комплекта. Никакого визарда и никаких шагов: обе колонки видны
+  // сразу, скрываются только требования, не относящиеся к описанному объекту.
+  (function initDocCheck() {
+    const conds = Array.from(document.querySelectorAll<HTMLInputElement>('input[data-cond]'));
+    const rows = Array.from(document.querySelectorAll<HTMLElement>('.pd-req'));
+    const outH = document.getElementById('pd-out-h');
+    const outList = document.getElementById('pd-out-list');
+    const outHint = document.getElementById('pd-out-hint');
+    if (!rows.length || !outH || !outList || !outHint) return;
+
+    const active = () => new Set(conds.filter((c) => c.checked).map((c) => c.dataset.cond));
+
+    function apply() {
+      const on = active();
+      const missing: { title: string; days: number; daysText: string; href: string }[] = [];
+      let shown = 0;
+
+      rows.forEach((row) => {
+        const when = row.dataset.when || '';
+        // Базовая строка (when пустой) видна всегда; условная — только когда
+        // соответствующее условие объекта отмечено.
+        const relevant = when === '' || on.has(when);
+        row.hidden = !relevant;
+        const box = row.querySelector<HTMLInputElement>('input[data-have]');
+        if (!relevant || !box) return;
+        shown++;
+        row.classList.toggle('is-ok', box.checked);
+        if (!box.checked) {
+          missing.push({
+            title: row.querySelector('.pd-req__title')?.textContent?.trim() || '',
+            days: Number(row.dataset.days || 0),
+            daysText: row.querySelector('.pd-req__days')?.textContent?.replace(/^Срок:\s*/, '').trim() || '',
+            href: row.querySelector<HTMLAnchorElement>('.pd-req__link')?.getAttribute('href') || '',
+          });
+        }
+      });
+
+      // Сортировка по сроку — главное свойство итога: сверху то, что дольше
+      // всех ждать чужой подписи, а не то, что удобнее сделать первым.
+      missing.sort((a, b) => b.days - a.days);
+
+      outList.textContent = '';
+      if (missing.length === 0) {
+        outH.textContent = `Комплект собран: ${shown} из ${shown}`;
+        outHint.textContent =
+          'По этому набору условий пробелов нет. Остаётся сверить сроки: освидетельствование и проверка знаний должны быть действующими на ДАТУ РАБОТ, а не на дату проверки комплекта.';
+        return;
+      }
+
+      outH.textContent = `Не хватает: ${missing.length} из ${shown}`;
+      missing.forEach((m) => {
+        const li = document.createElement('li');
+        const b = document.createElement('b');
+        b.textContent = m.title;
+        li.appendChild(b);
+        const s = document.createElement('span');
+        s.textContent = m.daysText ? 'Срок: ' + m.daysText : '';
+        li.appendChild(s);
+        if (m.href) {
+          const a = document.createElement('a');
+          a.href = m.href;
+          a.textContent = 'Разбор →';
+          a.style.color = 'var(--yellow)';
+          a.style.fontSize = 'var(--t-sm)';
+          li.appendChild(a);
+        }
+        outList.appendChild(li);
+      });
+
+      const longest = missing[0];
+      // Формулировка про «нет городских согласований» относится к НЕДОСТАЮЩИМ
+      // позициям, а не к набору условий: городская процедура может быть нужна
+      // и при этом уже отмечена как полученная.
+      outHint.textContent = longest.days >= 5
+        ? `Начинать нужно с позиции «${longest.title}»: она дольше всех зависит от чужой стороны, и именно она задаёт реальную дату выезда.`
+        : 'Среди недостающих позиций нет городских согласований — всё закрывается на стороне подрядчика, обычно за день-два.';
+    }
+
+    conds.forEach((c) => c.addEventListener('change', apply));
+    document.querySelectorAll<HTMLInputElement>('input[data-have]').forEach((b) => b.addEventListener('change', apply));
+    apply();
+  })();
+</script>
+</BaseLayout>

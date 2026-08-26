@@ -1,0 +1,189 @@
+---
+// ─────────────────────────────────────────────────────────────────────────────
+// /spravochnik/ — нормативный указатель. Волна 16.
+//
+// Раньше это был /blog/ — лента из 50 карточек с захардкоженными в этом файле
+// заголовками (они уже расходились с самими статьями). Теперь это указатель по
+// трём осям, а заголовки читаются из файлов материалов: разойтись физически не с чем.
+// ─────────────────────────────────────────────────────────────────────────────
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sources from '../../components/Sources.astro';
+import { ENTRIES, DOCS, OBJECTS, ROLES, byDoc, byObject, byRole } from '../../lib/spravochnik';
+
+const title = 'Нормативный указатель по крановым работам: ФНП №461, Москва';
+const description = 'Указатель справочника: материалы по документу (ФНП №461, ТР ТС 010/2011, 753н, 883н), по объекту надзора и по роли на площадке.';
+
+const CHECKED = '12.08.2026';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Справочник', item: 'https://moskran-servis.ru/spravochnik/' },
+  ],
+};
+
+const itemListLd = {
+  '@context': 'https://schema.org', '@type': 'ItemList',
+  name: 'Нормативный указатель по крановым работам',
+  numberOfItems: ENTRIES.length,
+  itemListElement: ENTRIES.map((e, i) => ({
+    '@type': 'ListItem', position: i + 1, name: e.title,
+    url: 'https://moskran-servis.ru' + e.url,
+  })),
+};
+---
+<BaseLayout title={title} description={description} path="/spravochnik/" ldExtra={[breadcrumbLd, itemListLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><span>Справочник</span>
+  </nav>
+
+  <section class="sv-head wrap">
+    <span class="eyebrow">Указатель · {ENTRIES.length} материалов</span>
+    <h1>Нормативный указатель по крановым работам</h1>
+    <p class="sv-head__lead">Материалов по крановым работам в указателе — {ENTRIES.length}, и каждый разложен сразу по трём разрезам: {DOCS.length} документов-первоисточников (ФНП №461, ТР ТС 010/2011, ГОСТы и своды правил, московские акты), {OBJECTS.length} объектов надзора (кран, стропы, канаты, траверсы, площадка, груз, сети, персонал, договор) и {ROLES.length} ролей ответственных. Разрез выбирают по тому, что уже на руках, — не по теме вопроса.</p>
+    <p class="sv-head__lead">Один и тот же материал лежит в трёх указателях сразу. Если у вас на руках документ — идите по документу. Если вопрос про конкретный узел (канат, строп, траверса, опора) — по объекту надзора. Если вы отвечаете за участок по приказу — по роли. Поиск по терминам — <a href="/#ukazatel">на главной</a>.</p>
+    <nav class="sv-jump" aria-label="Разделы указателя">
+      <a href="#po-dokumentu">По документу</a>
+      <a href="#po-obektu">По объекту надзора</a>
+      <a href="#po-roli">По роли</a>
+      <a href="#vse">Полный список</a>
+    </nav>
+  </section>
+
+  <section class="sv wrap" id="po-dokumentu">
+    <h2 class="sv__h">По документу</h2>
+    <p class="sv__lead">Норма, от которой отталкивается материал. Один материал может стоять под двумя документами — так и бывает в жизни: паспорт машины выдан по ТР ТС 010/2011, а эксплуатируется она по ФНП №461.</p>
+    {DOCS.map((d) => {
+      const list = byDoc(d.id);
+      return list.length > 0 && (
+        <div class="sv-block">
+          <h3 class="sv-block__h">{d.short} <span class="sv-block__n">{list.length}</span></h3>
+          <p class="sv-block__full">{d.full}</p>
+          <ul class="sv-list">
+            {list.map((e) => (
+              <li><a href={e.url}>{e.title}</a><span class="sv-list__norm">{e.norm}</span></li>
+            ))}
+          </ul>
+        </div>
+      );
+    })}
+  </section>
+
+  <section class="sv wrap" id="po-obektu">
+    <h2 class="sv__h">По объекту надзора</h2>
+    <p class="sv__lead">Что именно проверяют и чем это подтверждается. Порядок групп — от машины к площадке и людям, как идёт осмотр перед началом работ.</p>
+    <div class="sv-obj">
+      {OBJECTS.map((o) => {
+        const list = byObject(o.id);
+        return list.length > 0 && (
+          <div class="sv-obj__card">
+            <h3 class="sv-obj__h">{o.label} <span class="sv-block__n">{list.length}</span></h3>
+            <p class="sv-obj__note">{o.note}</p>
+            <ul class="sv-list sv-list--tight">
+              {list.map((e) => <li><a href={e.url}>{e.title}</a></li>)}
+            </ul>
+          </div>
+        );
+      })}
+    </div>
+  </section>
+
+  <section class="sv wrap" id="po-roli">
+    <h2 class="sv__h">По роли на площадке</h2>
+    <p class="sv__lead">Роли из приказов эксплуатирующей организации плюс шестая, неформальная, но решающая — заказчик крана. Материал попадает в роль не по теме, а по тому, кто по нему принимает решение на площадке.</p>
+    {ROLES.map((r) => {
+      const list = byRole(r.id);
+      return list.length > 0 && (
+        <div class="sv-role">
+          <div class="sv-role__side">
+            <h3 class="sv-role__h">{r.label}</h3>
+            <p class="sv-role__note">{r.note}</p>
+            <span class="sv-role__n">{list.length}</span>
+          </div>
+          <ul class="sv-list sv-list--tight">
+            {list.map((e) => <li><a href={e.url}>{e.title}</a></li>)}
+          </ul>
+        </div>
+      );
+    })}
+  </section>
+
+  <section class="sv wrap" id="vse">
+    <h2 class="sv__h">Полный список по алфавиту</h2>
+    <p class="sv__lead">{ENTRIES.length} материалов, отсортированных по заголовку. Рядом с каждым — норма, к которой он привязан.</p>
+    <ol class="sv-all">
+      {ENTRIES.map((e) => (
+        <li class="sv-all__item">
+          <a href={e.url}>{e.title}</a>
+          <span class="sv-all__norm">{e.norm}</span>
+        </li>
+      ))}
+    </ol>
+    <Sources
+      checked={CHECKED}
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026) — ФНП «Правила безопасности ОПО, на которых используются подъёмные сооружения»', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Приказ Минтруда России от 28.10.2020 №753н (ред. от 29.04.2025) — Правила по охране труда при погрузочно-разгрузочных работах и размещении грузов', href: 'https://normativ.kontur.ru/document?moduleId=1&documentId=501427' },
+        { text: 'Приказ Минтруда России от 11.12.2020 №883н (ред. от 29.04.2025) — Правила по охране труда при строительстве, реконструкции и ремонте', href: 'https://normativ.kontur.ru/document?documentId=501440&moduleId=1' },
+      ]}
+      note="Привязка материала к документу — наша, редакционная: она показывает, откуда норма, и не заменяет чтение самого документа. Точные номера пунктов проставлены только там, где они сверены по тексту нормы, — эти ссылки указаны внутри самих материалов."
+    />
+  </section>
+</main>
+
+<style>
+  .sv-head { padding-block: clamp(20px, 3vw, 32px) clamp(16px, 2vw, 24px); }
+  .sv-head h1 { font-size: var(--t-h1); margin-top: 12px; }
+  .sv-head__lead { margin-top: 16px; max-width: 74ch; color: var(--muted); }
+  .sv-head__lead a { color: var(--yellow); }
+  .sv-jump { margin-top: 20px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .sv-jump a { border: 1px solid var(--line-strong); padding: 9px 14px; font-size: var(--t-md); font-weight: 600; text-decoration: none; min-height: 44px; display: inline-flex; align-items: center; }
+  .sv-jump a:hover { background: var(--yellow); color: var(--bg); border-color: var(--yellow); }
+
+  /* Волна 124: запас под липкую шапку теперь один на весь сайт —
+     html { scroll-padding-top } в BaseLayout. Здесь обнулено, чтобы отступы
+     не складывались. */
+  .sv { padding-block: clamp(26px, 4vw, 48px); scroll-margin-top: 0; }
+  .sv__h { font-size: var(--t-h2); }
+  .sv__lead { margin-top: 12px; max-width: 74ch; color: var(--muted); }
+
+  .sv-block { margin-top: 26px; border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box; padding-left: 18px; }
+  /* flex-wrap обязателен: заголовок и счётчик — два элемента одной flex-строки,
+     а строка по умолчанию не переносится. На 320px «Охрана газораспределительных
+     сетей (ПП №878)» занимает всю колонку, и счётчик уезжал за край на 21px —
+     дефект был заложен изначально и просто не проявлялся, пока кегль заголовка
+     был на 1,7px мельче. min-width:0 тут не поможет: переполняет не сам текст,
+     а невлезающая пара элементов. */
+  .sv-block__h { font-size: var(--t-lead); display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+  .sv-block__n { font-family: var(--sans); font-size: var(--t-xs); color: var(--bg); background: var(--yellow); padding: 2px 7px; font-weight: 700; }
+  .sv-block__full { margin-top: 6px; color: var(--muted); font-size: var(--t-md); max-width: 78ch; }
+
+  .sv-list { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 6px; }
+  .sv-list li { display: grid; gap: 2px; }
+  .sv-list a { font-size: var(--t-md); font-weight: 600; text-decoration: none; }
+  .sv-list a:hover { color: var(--yellow); }
+  .sv-list__norm { font-size: var(--t-xs); color: var(--muted); }
+  .sv-list--tight { gap: 4px; }
+  .sv-list--tight a { font-weight: 500; font-size: var(--t-md); }
+
+  .sv-obj { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .sv-obj__card { background: var(--bg-2); border: 1px solid var(--line-strong); padding: 20px; }
+  .sv-obj__h { font-size: var(--t-base); display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 10px; }
+  .sv-obj__note { margin-top: 6px; color: var(--muted); font-size: var(--t-sm); }
+  @media (max-width: 980px) { .sv-obj { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .sv-obj { grid-template-columns: 1fr; } }
+
+  .sv-role { margin-top: 22px; display: grid; grid-template-columns: 300px 1fr; gap: 22px; border-top: 1px solid var(--line); padding-top: 20px; }
+  .sv-role__h { font-size: var(--t-base); }
+  .sv-role__note { margin-top: 6px; color: var(--muted); font-size: var(--t-md); }
+  .sv-role__n { display: inline-block; margin-top: 10px; font-family: var(--display); color: var(--yellow); font-size: var(--t-num); font-variant-numeric: tabular-nums; line-height: 1; }
+  @media (max-width: 820px) { .sv-role { grid-template-columns: 1fr; gap: 12px; } }
+
+  .sv-all { margin-top: 22px; padding-left: 20px; display: grid; gap: 10px; }
+  .sv-all__item a { font-weight: 600; text-decoration: none; font-size: var(--t-md); }
+  .sv-all__item a:hover { color: var(--yellow); }
+  .sv-all__norm { display: block; font-size: var(--t-xs); color: var(--muted); margin-top: 2px; }
+</style>
+</BaseLayout>

@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sources from '../../../../components/Sources.astro';
+import PriceDisclaimer from '../../../../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../../../../lib/prices';
+
+const title = 'Автокран 40–50 тонн в ЮВАО — вдоль Юго-Восточной хорды';
+const description = 'Тяжёлый автокран 40–50 тонн в ЮВАО Москвы: маршрут через новые эстакады Юго-Восточной хорды — 25,5 км дороги через Печатники и Текстильщики.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Автокраны 40–50 тонн', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/' },
+    { '@type': 'ListItem', position: 3, name: 'ЮВАО', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/yuvao/' },
+  ],
+};
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service', serviceType: 'Аренда автокрана 40-50 тонн в ЮВАО',
+  provider: { '@id': 'https://moskran-servis.ru/#organization' }, areaServed: 'ЮВАО, Москва',
+};
+---
+<BaseLayout title={title} description={description} path="/uslugi/arenda-avtokrana-40-50-tonn/yuvao/" ldExtra={[breadcrumbLd, serviceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/uslugi/arenda-avtokrana-40-50-tonn/">Автокраны 40–50 тонн</a><span>/</span><span>ЮВАО</span>
+  </nav>
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Автокран 40–50 т · Юго-Восточный округ</span>
+      <h1>Автокран 40–50 тонн в ЮВАО</h1>
+      <p>Через Печатники и Текстильщики проходит Юго-Восточная хорда — новая городская магистраль протяжённостью около 25,5 км с несколькими крупными эстакадами, построенная в дополнение к прежней уличной сети округа. Хорда напрямую связывает 22 района Москвы, включая Марьино и Люблино, и обслуживает территорию с населением порядка 2,5 млн человек. Для тяжёлого автокрана это не абстрактная цифра, а конкретное изменение маршрута подачи техники между объектами округа — и повод свериться с актуальной схемой проезда, а не с картой пятилетней давности.</p>
+    </div>
+  </section>
+  <section class="section wrap" style="padding-top:0;padding-bottom:clamp(28px,4vw,44px)">
+    <table class="adm">
+      <caption>Карточка допуска: автокран 40–50 т на объекте в ЮВАО</caption>
+      <thead><tr><th scope="col">Требование</th><th scope="col">Что это значит здесь</th><th scope="col">Основание</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Требование">Проезд под новыми эстакадами хорды</td><td data-label="Что это значит здесь">Часть эстакад хорды — крупные пролётные сооружения (например, одно из них длиной свыше 500 метров); техника этого класса в транспортном положении обычно укладывается в стандартные габариты проезда, но для площадки рядом с самой эстакадой маршрут подъезда уточняем отдельно, а не по общей схеме округа.</td><td data-label="Основание">Схема проезда</td></tr>
+        <tr><td data-label="Требование">Сокращённое логистическое плечо между районами</td><td data-label="Что это значит здесь">Марьино, Люблино, Текстильщики и Печатники теперь связаны хордой напрямую, без выезда на кольцевые магистрали, — при заявках на несколько объектов в разных районах округа это может сократить время подачи техники между площадками.</td><td data-label="Основание">Логистика подачи</td></tr>
+        <tr><td data-label="Требование">Соседство с прежней промышленной набережной</td><td data-label="Что это значит здесь">Вдоль Печатников и Южнопортового исторически тянутся складские и производственные территории у Москвы-реки — для объектов внутри действующих предприятий отдельная процедура допуска, она разобрана на странице услуги «Кран на режимный объект».</td><td data-label="Основание">Пропускной режим</td></tr>
+        <tr><td data-label="Требование">Какое освидетельствование действует</td><td data-label="Что это значит здесь">Частичное — не реже раза в 12 месяцев, полное — не реже раза в 3 года; на въезде спрашивают паспорт машины с записью и удостоверение оператора.</td><td data-label="Основание">ФНП №461, п. 165 и 189</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Хорда — не про пропуск на завод и не про грунт Некрасовки</h2>
+    <p>В ЮВАО у этого сайта уже разобраны два других сценария: пропускной режим у Московского НПЗ в Капотне — на <a href="/uslugi/kran-na-rezhimnyy-obekt/yuvao/">странице услуги «Кран на режимный объект в ЮВАО»</a> — и особенности грунта в Некрасовке на месте бывших полей аэрации — на <a href="/uslugi/bashennyy-kran/yuvao/">странице услуги «Башенный кран в ЮВАО»</a>. Юго-Восточная хорда — принципиально другая тема: она не про допуск на конкретную площадку и не про свойства грунта, а про то, как физически добраться до объекта в этой части округа сейчас, когда карта дорог заметно изменилась за последние несколько лет.</p>
+
+    <h2 style="margin:36px 0 18px">Что такое хорда и где она проходит</h2>
+    <p>Юго-Восточная хорда — участок городской сети хордовых магистралей общей протяжённостью около 25,5 км, построенный через территорию нескольких районов округа, включая Печатники и Текстильщики. В составе дороги — несколько крупных путепроводов и эстакад: часть пролётных строений превышает 500 метров в длину, что даёт представление о масштабе сооружений, под которыми и рядом с которыми теперь проходят маршруты подачи техники. Дорога напрямую связывает 22 района Москвы и, по расчётам на этапе проектирования, обслуживает территорию с населением около 2,5 млн человек.</p>
+
+    <h2 style="margin:36px 0 18px">Как это меняет подачу техники между объектами округа</h2>
+    <p>До появления хорды маршрут между, например, Печатниками и Марьино чаще шёл через плотную уличную сеть или с выездом на кольцевые магистрали. Прямая связка через хорду сокращает и время, и число поворотов на маршруте — это особенно заметно для заявок, где технику нужно перебросить между несколькими объектами округа в течение одной смены. Для площадок в непосредственной близости от самих эстакад и путепроводов маршрут подъезда всё равно уточняем отдельно: на период отделки прилегающих территорий возможны локальные ограничения проезда, которые не всегда видны на стандартной карте.</p>
+
+    <h2 style="margin:36px 0 18px">Цена для объекта в ЮВАО</h2>
+    <p>Базовая ставка — от 3 900 ₽/час (см. <a href="/#zayavka" style="color:var(--yellow)">ориентир по стоимости на главной</a>). Для объектов на территории действующих промышленных предприятий у Капотни закладываем дополнительное время на пропуск — подробности на странице услуги «Кран на режимный объект». Для остальных районов округа подача техники по хорде обычно быстрее, чем была несколько лет назад, что мы учитываем при расчёте сроков подачи.</p>
+    <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Что уточняем до выезда именно здесь</h2>
+    <p>Для площадки рядом с эстакадами хорды в первую очередь уточняем актуальную схему проезда на момент заявки — за годы строительства она менялась несколько раз, и старая схема может не совпадать с текущей. Второй пункт — комплект документов на въезд техники, если объект расположен на территории действующего предприятия у набережной, полный список — на странице <a href="/documents/propusk-na-obekt/">«Пропуск на объект»</a>.</p>
+    <Sources
+      checked="19.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 165 и 189 — периодичность освидетельствования и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'udms.mos.ru — Юго-Восточная хорда: маршрут через 22 района Москвы, около 2,5 млн человек в зоне влияния', href: 'https://udms.mos.ru/chords/southeast-expressway/' },
+        { text: 'ИНТЕРМОСТ — технические параметры путепроводов Юго-Восточной хорды: пролётные строения длиной 165,6–524,65 м, общая протяжённость участка около 25,5 км', href: 'https://intermost.info/projects/uvhorda/' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .adm { width: 100%; border-collapse: collapse; margin: 6px 0 0; font-size: var(--t-md); }
+  .adm caption { text-align: left; font-family: var(--display); text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .adm th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .adm td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .adm td:first-child { width: 24%; font-weight: 700; }
+  .adm td:last-child { width: 24%; color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 760px) {
+    .adm, .adm tbody, .adm tr, .adm td { display: block; width: 100%; }
+    .adm thead { display: none; }
+    .adm tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .adm td { border: none; padding: 5px 0; }
+    .adm td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .adm td:first-child, .adm td:last-child { width: 100%; }
+  }
+</style>
+</BaseLayout>

@@ -1,0 +1,1311 @@
+---
+// ─────────────────────────────────────────────────────────────────────────────
+// ГЛАВНАЯ. Волна 16 — смена архетипа.
+//
+// Было: hero + 21 секция лендинга (полоса доверия, бегущая строка, счётчики,
+// квиз, шаги 01–04, FAQ, форма) — то есть эталонный скелет сети, с которого
+// списаны остальные восемь сайтов.
+//
+// Стало: ЭКРАН ПОИСКА ПО СПРАВОЧНИКУ. Порядок чтения перевёрнут: сначала норма,
+// потом техника, потом заявка. Коммерческая часть — один компактный блок внизу.
+// Ни бегущей строки, ни stat-bar/trust-bar, ни шагов 01–04, ни hero-иллюстрации:
+// у сайта-справочника этих компонентов нет вообще.
+//
+// Поиск работает по ПРЕДМЕТНОМУ УКАЗАТЕЛЮ (термин → материал), а не по заголовкам:
+// человек ищет «наряд-допуск» и «браковка каната», а не «Разбор для заказчика».
+// Индекс собирается из src/lib/spravochnik.ts на этапе сборки — без запросов,
+// без внешних библиотек, при выключенном JS виден целиком.
+// ─────────────────────────────────────────────────────────────────────────────
+import BaseLayout from '../layouts/BaseLayout.astro';
+import Sources from '../components/Sources.astro';
+import PriceDisclaimer from '../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../lib/prices';
+import { TERM_LETTERS, TERMS, ENTRIES, DOCS, OBJECTS, ROLES } from '../lib/spravochnik';
+
+const title = 'Справочник по крановым работам: ФНП №461, допуски — Москва';
+const description = 'Поиск по нормам крановых работ: ФНП №461, освидетельствование, наряд-допуск у ЛЭП, стропы, канаты, роли на площадке. А–Я и что изменилось в нормах.';
+
+const CHECKED = '12.08.2026';
+
+// Волна 124. Согласование числительного: в лиде стояло «Здесь 53 разборов», в
+// подсказке — «127 терминов ведут на 53 материалов». Обе формы неверны (53 →
+// «разбора», «материала»), и обе стоят на первом экране, где текст читается
+// за две секунды и любая ошибка согласования выглядит как небрежность.
+// Хардкодить правильную форму нельзя: число берётся из ENTRIES и меняется
+// вместе со справочником — поэтому форма выбирается правилом.
+const plural = (n: number, one: string, few: string, many: string) => {
+  const d = n % 10;
+  const dd = n % 100;
+  if (d === 1 && dd !== 11) return one;
+  if (d >= 2 && d <= 4 && (dd < 12 || dd > 14)) return few;
+  return many;
+};
+
+// Якорь буквы: id и href обязаны совпадать и не содержать символов, которые
+// придётся кодировать в адресной строке. «0–9» превращается в «0-9», кириллица
+// остаётся как есть (браузеры её кодируют корректно, и в закладке она читаема).
+const anchor = (letter: string) => letter.replace('–', '-');
+
+// «Что изменилось в нормах» — только проверенные 12.08.2026 факты с реквизитами.
+// Каждая строка обязана отвечать на вопрос «и что мне с этим делать», иначе это
+// новостная лента, а не справочник.
+const changes = [
+  {
+    when: '8 июня 2026',
+    what: 'ФНП №461 действует в редакции от 16.04.2026 (приказ Ростехнадзора от 16.04.2026 №129).',
+    todo: 'Если в договоре или регламенте подрядчика документ назван «в редакции 2024 года» — редакция устарела. Перечень правок этой редакции в открытых источниках на дату проверки не раскрыт, поэтому мы фиксируем только сам факт новой редакции и не пересказываем её содержание.',
+    href: '/spravochnik/fnp-461-chto-izmenilos/',
+  },
+  {
+    when: '1 сентября 2025',
+    what: 'Правила по охране труда при погрузочно-разгрузочных работах и размещении грузов (приказ Минтруда России от 28.10.2020 №753н) действуют в редакции от 29.04.2025 и рассчитаны до 1 сентября 2027 года.',
+    todo: 'Это и есть действующая замена ПОТ РМ-007-98. Ссылка на ПОТ РМ-007-98 в инструкции или в договоре означает недействующий документ.',
+    href: '/spravochnik/pot-rm-007-98/',
+  },
+  {
+    when: '1 сентября 2024',
+    what: 'Приказом Ростехнадзора от 22.01.2024 №16 из ФНП №461 исключены пункты 143–145 — процедура постановки подъёмного сооружения на учёт с присвоением учётного номера.',
+    todo: 'Требовать «учётный номер ПС» в комплекте документов больше не на чем. Регистрация самого опасного производственного объекта в реестре — осталась, и экспертиза промышленной безопасности тоже: обязанность закреплена другими пунктами тех же Правил.',
+    href: '/spravochnik/registraciya-krana-rostehnadzor/',
+  },
+  {
+    when: 'действующая норма',
+    what: 'Порог по напряжению у воздушной линии — «более 50 В» (ФНП №461, п. 112), а не «42 В», как пишут в отраслевых статьях.',
+    todo: 'Цифра 42 В пришла из ПОТ РМ-007-98, прекративших действие. Для крана считается расстояние менее 30 м до крайнего провода — тогда работа только по наряду-допуску.',
+    href: '/spravochnik/rabota-krana-ryadom-s-lep/',
+  },
+  {
+    when: '7 марта 2014',
+    what: 'Отменены ПБ 10-382-00 «Правила устройства и безопасной эксплуатации грузоподъёмных кранов».',
+    todo: 'Двенадцать лет спустя ссылка на ПБ 10-382-00 всё ещё встречается в типовых договорах аренды крана. Это самый быстрый признак того, что документы подрядчика не обновлялись.',
+    href: '/spravochnik/fnp-461-chto-izmenilos/',
+  },
+];
+
+// Компактная коммерческая часть. Формулу расчёта и ставки перенесли из
+// пошагового визарда БЕЗ пересчёта: ставка/час × 8 часов × смены, ×1.12 при
+// пропускном режиме. Изменилась только подача — один экран вместо двух шагов.
+const rates = [
+  { t: '16–20 т', v: 2200 },
+  { t: '25 т', v: 2600 },
+  { t: '32 т', v: 3100 },
+  { t: '50 т', v: 3900 },
+];
+// Волна 124. Две цифры для полосы ставки на первом экране. Обе ВЫЧИСЛЯЮТСЯ из
+// того же массива rates, что и калькулятор ниже, — отдельного числа «на глаз»
+// на странице не появляется и разойтись с калькулятором физически не может.
+// minShift — это ровно то «от 17 600 ₽», которое калькулятор показывает
+// значением по умолчанию (ставка × 8 часов × 1 смена).
+const minRate = Math.min(...rates.map((r) => r.v));
+const minShift = minRate * 8;
+
+const services = [
+  { href: '/uslugi/arenda-avtokrana-16-25-tonn/', name: 'Автокран 16–25 т', note: 'разгрузка, лёгкий монтаж, подача материалов' },
+  { href: '/uslugi/arenda-avtokrana-25-40-tonn/', name: 'Автокран 25–40 т', note: 'тяжёлые ЖБИ, увеличенный вылет' },
+  { href: '/uslugi/arenda-avtokrana-40-50-tonn/', name: 'Автокран 40–50 т', note: 'крупногабарит, согласование маршрута' },
+  { href: '/uslugi/kran-na-rezhimnyy-obekt/', name: 'Кран на режимный объект', note: 'пропуск на технику и бригаду' },
+  { href: '/uslugi/bashennyy-kran/', name: 'Башенный кран', note: 'монтаж на весь срок стройки' },
+  { href: '/uslugi/lyubaya-podyomnaya-tehnika/', name: 'Гусеничный кран, манипулятор, автовышка', note: 'вне нашего профиля — подбираем через партнёрскую сеть' },
+];
+
+const okruga = [
+  ['cao', 'ЦАО'], ['sao', 'САО'], ['svao', 'СВАО'], ['vao', 'ВАО'], ['yuvao', 'ЮВАО'], ['yuao', 'ЮАО'],
+  ['yuzao', 'ЮЗАО'], ['zao', 'ЗАО'], ['szao', 'СЗАО'], ['zelao', 'ЗелАО'], ['tinao', 'ТиНАО'],
+];
+
+const collectionLd = {
+  '@context': 'https://schema.org',
+  '@type': 'CollectionPage',
+  name: 'Справочник по крановым работам',
+  description,
+  url: 'https://moskran-servis.ru/',
+  inLanguage: 'ru-RU',
+  isPartOf: { '@id': 'https://moskran-servis.ru/#website' },
+  about: DOCS.map((d) => ({ '@type': 'Thing', name: d.full })),
+};
+---
+<BaseLayout title={title} description={description} path="/" ldExtra={[collectionLd]}>
+<main>
+  <section class="lookup wrap">
+    {/* Волна 122 (пилот): фоновое видео hero — распространённый приём отраслевых
+        сайтов (video autoplay/muted/loop/playsinline/preload=none/poster/aria-hidden/
+        tabindex=-1 позади заголовка + затемняющий scrim), но в СВОЁМ коде и своей
+        композиции — не full-bleed на весь экран, как обычно делают, а рамочная
+        панель внутри .wrap с жёлтым бордером: сайт нигде больше не выходит за
+        wrap, edge-to-edge разрушил бы уже устоявшийся бруталистский язык
+        «всё — обведённая коробка» (.lookup__stats, .tool__inner, .pricebar).
+        .lookup__media держит postER КАК CSS-ФОН отдельно от <video> — это и есть
+        честный prefers-reduced-motion фоллбэк без единой строчки JS: видео
+        скрывается медиа-запросом, а фон панели (постер) остаётся на месте сам
+        по себе, потому что он не в video, а в background-image контейнера.
+        Источник видео/автор/лицензия — Sources в конце страницы + content-plan.md,
+        «Волна 122». */}
+    <div class="lookup__panel">
+      <div class="lookup__media" aria-hidden="true">
+        <video class="lookup__video" autoplay muted loop playsinline preload="none" poster="/images/hero/hero-crane-poster.jpg" aria-hidden="true" tabindex="-1">
+          <source src="/videos/hero-crane.mp4" type="video/mp4" />
+        </video>
+        <div class="lookup__scrim"></div>
+      </div>
+      <div class="lookup__grid">
+        <div class="lookup__col">
+          <span class="eyebrow">Справочник крановых работ · Москва</span>
+          <h1>Найдите норму, а потом уже кран</h1>
+          {/* Волна 124. Лид был ОДНИМ абзацем в десять строк (пятнадцать на 320 px)
+              и занимал полэкрана телефона сплошной серой стеной — за ним не было
+              видно ни поля поиска, ни того, что кран вообще можно заказать.
+              Перечисление тем НЕ УДАЛЕНО, а перенесено ниже поля поиска
+              (.lookup__topics): там оно и по смыслу уместнее — сначала человек
+              видит, что за сайт и сколько стоит кран, потом чем справочник
+              наполнен. В лиде остались две фразы исходного текста дословно. */}
+          <p class="lookup__lead">Здесь {ENTRIES.length} {plural(ENTRIES.length, 'разбор', 'разбора', 'разборов')} нормативной части крановых работ. Каждый материал привязан к документу и роли на площадке, а не к дате публикации.</p>
+
+          {/* Волна 124 / цена на первом экране. Замер до правки: первое число в
+              рублях на главной стояло на 15 350-й точке при высоте страницы
+              16 714 — девятнадцатый экран телефона, то есть человек, пришедший
+              за ценой крана, не находил её вообще. Указатель А–Я один занимает
+              больше десяти экранов и отодвигает коммерческий блок в самый низ.
+              Полоса намеренно НЕ перебивает поиск: она узкая, одной строкой
+              числа, и ведёт в тот же блок #zayavka, а не заменяет его. Обе
+              цифры вычислены из rates (см. комментарий у minRate). */}
+          <a class="lookup__rate" href="#zayavka">
+            <span class="lookup__rate-k">Нужен сам кран</span>
+            {/* Неразрывные пробелы перед ₽ обязательны: на 320 px строка рвалась
+                между числом и знаком рубля — «от 17 600» на одной строке, «₽.»
+                на следующей. Число в отдельном <span> с nowrap по той же
+                причине: сумма не должна разъезжаться на два куска ни при
+                какой ширине. */}
+            <b class="lookup__rate-v"><span>от {minRate.toLocaleString('ru-RU')}&nbsp;₽</span><i> / час</i></b>
+            <span class="lookup__rate-n">Смена 8 часов — от {minShift.toLocaleString('ru-RU')}&nbsp;₽. Рассчитать и оставить заявку →</span>
+          </a>
+
+          <form class="lookup__form" role="search" onsubmit="return false">
+            <label class="lookup__label" for="q">Поиск по указателю — введите термин, документ или норму</label>
+            <input id="q" type="search" class="lookup__input" placeholder="наряд-допуск, освидетельствование, строп, ФНП 461…" autocomplete="off" />
+            <p class="lookup__count" id="q-count" role="status">Показано терминов: {TERMS.length}</p>
+          </form>
+
+          {/* Перечисление тем — вторая половина прежнего лида, слово в слово.
+              Здесь ему и место: человек уже знает, что это за сайт, и читает
+              список тем как содержание, а не как преграду перед поиском. */}
+          <p class="lookup__topics">Что разбираем: что должно быть в паспорте машины, когда действует освидетельствование, кто подписывает наряд-допуск, как браковать канат и строп, что обязан сделать крановщик при неисправности.</p>
+
+          <p class="lookup__hint">Поиск работает по предметному указателю ниже: {TERMS.length} {plural(TERMS.length, 'термин', 'термина', 'терминов')} ведут на {ENTRIES.length} {plural(ENTRIES.length, 'материал', 'материала', 'материалов')}. Ничего не отправляется на сервер — указатель целиком лежит на странице и работает даже с выключенным JavaScript, просто без фильтрации.</p>
+
+          {/* Быстрые переходы прямо в первом экране: раньше единственным способом
+              попасть в раздел был скролл через весь указатель А–Я (десять с лишним
+              экранов на телефоне) либо открытие бургер-меню. Здесь — шесть настоящих
+              разделов сайта: три якоря на этой же странице и три отдельные страницы,
+              каждая уже в навигации выше. Ничего нового не выдумано, только более
+              короткий путь к тому, что уже есть. */}
+          <nav class="hero__quicknav" aria-label="Быстрые переходы по разделам">
+            <a href="#ukazatel">Указатель А–Я</a>
+            <a href="/park/">Парк техники</a>
+            <a href="/uslugi/lyubaya-podyomnaya-tehnika/">Другая техника</a>
+            <a href="/keysy/">Разборы задач</a>
+            <a href="/documents/">Документы</a>
+            <a href="/faq/">Вопросы</a>
+          </nav>
+        </div>
+
+        {/* Волна 19: визуальный якорь первого экрана взамен пропавшей hero-иллюстрации.
+            Не подъёмный кран во всю ширину (это был стиль лендинга волны 9) — линейная
+            техническая схема: документ с найденной строкой (жёлтая подсветка = совпадение
+            в указателе), угловые регистрационные метки чертежа, линия размера и едва заметный
+            силуэт крана штрихом — три мотива из брифа («документа/печати/крана») в одном
+            знаке, а не три разных иконки. Только SVG-примитивы, ни одного растрового ассета.
+            Волна 122: теперь поверх видео — заливка var(--bg-2) внутри самого рисунка (см.
+            "document" path ниже) даёт ей читаться как непрозрачная плашка над видео, а не
+            прозрачное окно; сам штрих-рисунок контрастнее сплошного --bg, видео его не топит. */}
+        <div class="lookup__art" aria-hidden="true">
+          <svg viewBox="0 0 320 320" role="img" focusable="false">
+          <defs>
+            <pattern id="lm-dots" width="18" height="18" patternUnits="userSpaceOnUse">
+              <circle cx="1.4" cy="1.4" r="1.3" fill="var(--line-strong)" />
+            </pattern>
+          </defs>
+
+          <rect x="10" y="10" width="300" height="300" fill="url(#lm-dots)" opacity="0.4" />
+          <rect x="10" y="10" width="300" height="300" fill="none" stroke="var(--line-strong)" stroke-width="1.4" stroke-dasharray="2 7" />
+
+          <g stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="square" fill="none">
+            <path d="M10 30 V10 H30" />
+            <path d="M290 10 H310 V30" />
+            <path d="M310 290 V310 H290" />
+            <path d="M30 310 H10 V290" />
+          </g>
+
+          <g stroke="var(--yellow)" stroke-width="2" opacity="0.18" fill="none" stroke-linecap="round">
+            <line x1="56" y1="120" x2="56" y2="42" />
+            <line x1="56" y1="48" x2="102" y2="48" />
+            <line x1="56" y1="48" x2="30" y2="60" />
+            <line x1="92" y1="48" x2="92" y2="70" />
+            <line x1="40" y1="120" x2="70" y2="120" />
+          </g>
+
+          <path d="M110 66 L190 66 L214 90 L214 250 L110 250 Z" fill="var(--bg-2)" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round" />
+          <path d="M190 66 L190 90 L214 90" fill="none" stroke="var(--ink)" stroke-width="2.5" stroke-linejoin="round" />
+
+          <g stroke="var(--muted)" stroke-width="3.5" stroke-linecap="round">
+            <line x1="128" y1="108" x2="196" y2="108" />
+            <line x1="128" y1="148" x2="180" y2="148" />
+            <line x1="128" y1="168" x2="196" y2="168" />
+            <line x1="128" y1="188" x2="170" y2="188" />
+          </g>
+          <rect x="122" y="121" width="80" height="14" fill="var(--yellow)" />
+          <line x1="128" y1="128" x2="196" y2="128" stroke="var(--bg-2)" stroke-width="3.5" stroke-linecap="round" />
+
+          <g stroke="var(--line-strong)" stroke-width="1.4">
+            <line x1="110" y1="266" x2="214" y2="266" />
+            <line x1="110" y1="260" x2="110" y2="272" />
+            <line x1="214" y1="260" x2="214" y2="272" />
+          </g>
+        </svg>
+        </div>
+      </div>
+    </div>
+    <p class="lookup__vidcredit">Фоновое видео — атмосферная иллюстрация «башенный кран на площадке», не конкретный объект и не наша техника. Автор: Abdo Alshreef, <a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>, <a href="https://www.pexels.com/video/big-crane-26843658/" target="_blank" rel="noopener">Pexels</a>.</p>
+
+    {/* Волна 19: честные метрики САМОГО справочника (метаданные о содержимом сайта),
+        а не выдуманные бизнес-цифры вида «14 лет на рынке». Все четыре значения — из
+        src/lib/spravochnik.ts и константы CHECKED выше; ничего не захардкожено отдельно,
+        разойтись с реальным числом материалов/терминов физически не может. */}
+    <div class="lookup__stats" role="note" aria-label="Показатели справочника">
+      <div class="lookup__stat">
+        <b>{ENTRIES.length}</b>
+        <span>материалов в справочнике</span>
+      </div>
+      <div class="lookup__stat">
+        <b>{TERMS.length}</b>
+        <span>терминов в указателе А–Я</span>
+      </div>
+      <div class="lookup__stat">
+        <b>{DOCS.length}</b>
+        <span>действующих нормативных источников</span>
+      </div>
+      <div class="lookup__stat lookup__stat--date">
+        <b>{CHECKED}</b>
+        <span>дата последней сверки фактуры</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="idx wrap" id="ukazatel">
+    <h2 class="idx__h">Предметный указатель А–Я</h2>
+    <nav class="idx__letters" aria-label="Буквы указателя">
+      {TERM_LETTERS.map((g) => <a href={`#bukva-${anchor(g.letter)}`}>{g.letter}</a>)}
+    </nav>
+    <div class="idx__body">
+      {TERM_LETTERS.map((g) => (
+        <section class="idx__group" id={`bukva-${anchor(g.letter)}`} data-letter={anchor(g.letter)}>
+          <h3 class="idx__letter" aria-label={`Буква ${g.letter}`}>{g.letter}</h3>
+          <ul class="idx__list">
+            {g.items.map((it) => (
+              <li class="idx__item" data-hay={(it.term + ' ' + it.title).toLowerCase()}>
+                <a href={it.url}>{it.term}</a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+    <p class="idx__empty" id="q-empty" hidden>По этому запросу в указателе ничего нет. Попробуйте короче: «строп», «канат», «наряд», «461». Если термина не хватает — это наш пробел, а не ваш: напишите, добавим статью.</p>
+  </section>
+
+  <section class="chg wrap" id="izmeneniya">
+    <h2 class="chg__h">Что изменилось в нормах</h2>
+    <p class="chg__lead">Пять пунктов, из-за которых чужой текст про краны может быть устаревшим уже в момент публикации. Сверено {CHECKED}; ниже — реквизиты, по которым это можно перепроверить самостоятельно.</p>
+    <ol class="chg__list">
+      {changes.map((c) => (
+        <li class="chg__item">
+          <div class="chg__meta">
+            <svg class="chg__mark" viewBox="0 0 24 24" fill="none" stroke="var(--yellow)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8 12.3l2.6 2.6L16 9.3" />
+            </svg>
+            <span class="chg__when">{c.when}</span>
+          </div>
+          <div class="chg__body">
+            <p class="chg__what">{c.what}</p>
+            <p class="chg__todo">{c.todo}</p>
+            <a class="chg__link" href={c.href}>Разбор в справочнике →</a>
+          </div>
+        </li>
+      ))}
+    </ol>
+    <Sources
+      checked={CHECKED}
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026), п. 112 и п. 165–189', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Приказ Ростехнадзора от 22.01.2024 №16 — изменения в ФНП №461 с 01.09.2024', href: 'https://normativ.org/lib/promyishlennaya-bezopasnost/izmeneniya-v-pravilakh-bezopasnosti-opo-s-podemnymi-sooruzheniyami-s-1-sentyabrya-2024-goda/' },
+        { text: 'Приказ Минтруда России от 28.10.2020 №753н (ред. от 29.04.2025), срок действия до 01.09.2027', href: 'https://normativ.kontur.ru/document?moduleId=1&documentId=501427' },
+        { text: 'ПОТ РМ-007-98 — отметка «прекратили действие»', href: 'https://base.garant.ru/12126870/' },
+      ]}
+    />
+  </section>
+
+  <section class="paths wrap glow-stage">
+    <h2 class="paths__h">Три входа в справочник</h2>
+    <p class="paths__lead">Один и тот же материал находится тремя разными способами — смотря с чем вы пришли: с документом на руках, с вопросом про конкретный узел или с должностью в приказе.</p>
+    {/* Волна 123. Было три одинаковые карточки «рамка 1px + плашка --bg-2» —
+        четвёртая подряд сетка ровно такого же вида на этой же странице
+        (указатель, три входа, парк, коммерческий блок). Стало ОДНА плашка,
+        разделённая внутренними волосяными линиями на три ячейки, с
+        hazard-полосой по верхней кромке: это уже не «карточки», а щиток с
+        тремя позициями — другой класс объекта, а не другой цвет того же.
+        Текст не тронут ни на слово: изменилась только разбивка на элементы,
+        чтобы число могло работать как приём (см. .path-cell__n). */}
+    <div class="paths__plate">
+      <a class="path-cell" href="/spravochnik/#po-dokumentu">
+        <span class="path-cell__kicker">По документу</span>
+        <span class="path-cell__title"><b class="path-cell__n">{DOCS.length}</b> нормативных источников</span>
+        <span class="path-cell__note">ФНП №461, ТР ТС 010/2011, Правила по охране труда 753н и 883н, ПДД, КоАП, московские акты, паспорт машины.</span>
+      </a>
+      <a class="path-cell" href="/spravochnik/#po-obektu">
+        <span class="path-cell__kicker">По объекту надзора</span>
+        <span class="path-cell__title"><b class="path-cell__n">{OBJECTS.length}</b> групп</span>
+        <span class="path-cell__note">Кран, стропы, канаты, траверсы, площадка, груз, сети и ЛЭП, персонал, договор.</span>
+      </a>
+      <a class="path-cell" href="/spravochnik/#po-roli">
+        <span class="path-cell__kicker">По роли на площадке</span>
+        <span class="path-cell__title"><b class="path-cell__n">{ROLES.length}</b> роли</span>
+        <span class="path-cell__note">Крановщик, стропальщик, ответственный за безопасное производство работ, ответственный за содержание ПС, заказчик.</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="tool wrap">
+    <div class="tool__inner">
+      <div>
+        <h2 class="tool__h">Проверка комплекта документов</h2>
+        <p class="tool__p">Отметьте, что у вас есть на руках, — инструмент покажет, чего не хватает для допуска техники на московский объект и какой срок добавляет каждый недостающий документ. Считает не деньги, а пробелы в комплекте: это единственное, что реально срывает дату выезда.</p>
+      </div>
+      <a class="btn" href="/proverka-dokumentov/">Открыть проверку →</a>
+    </div>
+  </section>
+
+  <section class="honest wrap">
+    <h2 class="honest__h">Чего вы не найдёте на этом сайте — и почему</h2>
+    <div class="honest__box">
+      <p>Здесь нет блока с оценками, звёздами и подписями довольных клиентов: заказов через сайт ещё не было, а рисовать их — значит начинать работу с подделки. Появится карточка с настоящими отзывами — поставим на неё ссылку. Здесь нет и «фотографий нашего парка»: пока не сделана съёмка своей техники, стоковые кадры чужих машин вводили бы в заблуждение о том, что именно приедет на объект. Регистрационные данные называем при заявке по фактическому состоянию.</p>
+      <p>Нет здесь и пересказа норм своими словами без ссылки: если в материале стоит цифра или срок, под ним стоит документ, по которому это можно перепроверить, и дата, когда мы это делали. Норма могла измениться после этой даты — тогда прав документ, а не мы.</p>
+    </div>
+  </section>
+
+  {/* Волна 122 (пилот видео+тилт): фото-карточки парка на главной — до этой волны
+      /park/ был только текстовой ссылкой в comm__services ниже, ни одной фотографии
+      техники на главной не было вовсе. Три модели (не все 13 — это teaser, а не
+      дубль /park/), по одной из трёх ключевых категорий (автокран/башенный/
+      гусеничный), чтобы карточки не выглядели случайной выборкой. Наклон — тот же
+      МЕХАНИЗМ, что уже работает на a.park-card по всей сети (initCardTilt в
+      BaseLayout, ±6°, gated по prefers-reduced-motion и pointer:fine) — здесь этот
+      класс встречается на главной ВПЕРВЫЕ, поэтому не пишем третий JS-контроллер
+      тилта на этом же сайте (см. initPathCardTilt выше) — это было бы дублированием
+      уже проверенного кода без причины. Модификатор --photo добавляет только
+      картинку сверху, сам тилт/блик/подъём наследуются от общего правила. Фото —
+      те же файлы, что уже показаны с полным атрибутированием на страницах моделей
+      (Wikimedia CC BY-SA / собственная съёмка производителя) — здесь дублируем не
+      лицензионный текст, а факт «источник и лицензия на странице модели», как того
+      требует CC BY-SA (attribution на каждом месте показа), без загромождения
+      маленькой карточки повторной длинной подписью. */}
+  <section class="homepark wrap glow-stage">
+    <h2 class="homepark__h">Три класса техники в парке</h2>
+    <p class="homepark__lead">Автокран, башенный и гусеничный — у каждого свой способ встать на площадке и своя логика допуска. Ниже фото модели (не единица нашего парка на этот момент — источник и лицензия указаны на странице модели), полные технические характеристики и стоимость — по ссылке.</p>
+    <div class="homepark__grid">
+      <a class="park-card park-card--photo" href="/park/ivanovets-ks-45717/">
+        <span class="park-card__photo">
+          <picture>
+            <source srcset="/images/park/ivanovets-ks-45717.webp" type="image/webp" />
+            <img src="/images/park/ivanovets-ks-45717.jpg" width="1280" height="740" loading="lazy" decoding="async" alt="Автокран Ивановец КС-45717 — фото модели, не единица нашего парка" />
+          </picture>
+        </span>
+        <span class="park-card__type">Автокран</span>
+        <h3>Ивановец КС-45717</h3>
+        <span class="park-card__tonnage">25 т · доезжает своим ходом</span>
+      </a>
+      <a class="park-card park-card--photo" href="/park/liebherr-132-ec-h8/">
+        <span class="park-card__photo">
+          <picture>
+            <source srcset="/images/park/liebherr-132-ec-h8.webp" type="image/webp" />
+            <img src="/images/park/liebherr-132-ec-h8.jpg" width="1280" height="853" loading="lazy" decoding="async" alt="Башенный кран Liebherr 132 EC-H8 — фото модели, не единица нашего парка" />
+          </picture>
+        </span>
+        <span class="park-card__type">Башенный кран</span>
+        <h3>Liebherr 132 EC-H8</h3>
+        <span class="park-card__tonnage">132 тм · монтаж на весь срок стройки</span>
+      </a>
+      <a class="park-card park-card--photo" href="/park/sany-scc550e/">
+        <span class="park-card__photo">
+          <picture>
+            <source srcset="/images/park/sany-scc550e.webp" type="image/webp" />
+            <img src="/images/park/sany-scc550e.jpg" width="1280" height="960" loading="lazy" decoding="async" alt="Гусеничный кран SANY SCC550E — фото модели, не единица нашего парка" />
+          </picture>
+        </span>
+        <span class="park-card__type">Гусеничный кран</span>
+        <h3>SANY SCC550E</h3>
+        <span class="park-card__tonnage">55 т · только на трале, вторая транспортная задача</span>
+      </a>
+    </div>
+    <p class="homepark__more"><a href="/park/">Весь парк — ещё 10 моделей →</a></p>
+  </section>
+
+  <section class="comm wrap" id="zayavka">
+    <h2 class="comm__h">Техника и заявка</h2>
+    <p class="comm__lead">Коммерческая часть сайта — намеренно в конце и в одном блоке: сначала норма, потом машина, потом заявка. Мы подаём автокраны 16–50 т и башенные краны по Москве, с оператором, по договору.</p>
+
+    <div class="comm__grid">
+      <div class="comm__col" id="uslugi">
+        <h3 class="comm__h3">Что подаём</h3>
+        <ul class="comm__services">
+          {services.map((s) => (
+            <li><a href={s.href}>{s.name}</a> <span>— {s.note}</span></li>
+          ))}
+        </ul>
+        <p class="comm__more">
+          <a href="/park/">Парк техники</a> · <a href="/keysy/">Разборы задач</a> ·
+          <a href="/documents/">Документы</a> · <a href="/faq/">Вопросы</a> · <a href="/contacts/">Контакты</a>
+        </p>
+        <p class="comm__geo" id="geo">Округа: {okruga.map(([slug, name], i) => (<>{i > 0 ? ' · ' : ''}<a href={`/geo/${slug}/`}>{name}</a></>))}</p>
+      </div>
+
+      <div class="comm__col">
+        <h3 class="comm__h3">Ориентир по стоимости</h3>
+        <p class="pricebar__formula">Ставка за час × 8 часов × число смен. При объекте с пропускным режимом — коэффициент 1,12: это оформление пропуска, а не произвольная наценка.</p>
+        <div class="pricebar" id="pricebar">
+          <div class="pricebar__row">
+            <label class="pricebar__field">
+              <span>Класс</span>
+              <select id="pb-rate">
+                {rates.map((r, i) => <option value={r.v} selected={i === 0}>{r.t} — {r.v.toLocaleString('ru-RU')} ₽/час</option>)}
+              </select>
+            </label>
+            <label class="pricebar__field">
+              <span>Смен по 8 часов</span>
+              <select id="pb-shifts">
+                <option value="1" selected>1</option>
+                <option value="2">2</option>
+                <option value="5">5 (рабочая неделя)</option>
+              </select>
+            </label>
+          </div>
+          <label class="pricebar__check">
+            <input type="checkbox" id="pb-pass" />
+            <span>Объект с пропускным режимом (× 1,12)</span>
+          </label>
+          <p class="pricebar__out" role="status"><span>Итого ориентировочно</span><b id="pb-total">от 17 600 ₽</b></p>
+        </div>
+        <p class="comm__note">Не входит: подача техники (зависит от удалённости), работы в выходные и праздники, простой по вине заказчика сверх согласованного времени. Всё это называется до подтверждения заявки, а не в акте.</p>
+        <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+      </div>
+
+      <div class="comm__col">
+        <h3 class="comm__h3">Заявка</h3>
+        {/* Волна 37 (код-ревью): без method/action нативный сабмит браузера
+            (если JS не подключился — блокировщик, ошибка выше по странице,
+            CSP) уходил бы GET-запросом на текущий URL с телефоном/именем в
+            query string — то есть в адресную строку и историю браузера.
+            method="post" убирает этот путь: нативный фоллбэк-сабмит станет
+            POST на себя же (страница перезагрузится), без утечки ПДн в URL. */}
+        <form class="order-form" method="post">
+          <label class="order-form__label" for="order-name">Ваше имя / компания</label>
+          <input id="order-name" type="text" name="name" autocomplete="name" placeholder="Например: ООО «Стройка»" />
+          <label class="order-form__label" for="order-phone">Телефон <span class="order-form__req">— обязательное поле</span></label>
+          <input id="order-phone" type="tel" name="phone" autocomplete="tel" inputmode="tel" placeholder="+7 (___) ___-__-__" required aria-required="true" />
+          <label class="order-form__label" for="order-district">Округ объекта</label>
+          <select id="order-district" name="district" autocomplete="address-level3">
+            <option value="">Не выбран</option>
+            {okruga.map(([, name]) => <option>{name}</option>)}
+            <option>За пределами Москвы</option>
+          </select>
+          <input type="text" name="website" id="order-website" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;opacity:0;height:0;width:0;" />
+          {/* Волна 39: у чекбокса ДВЕ раздельные ссылки, а не одна.
+              Политика — публичный документ оператора (ч. 2 ст. 18.1 152-ФЗ),
+              согласие — то, что человек даёт этой галочкой (ст. 9 в редакции
+              с 01.09.2025, отдельным документом). Человек должен видеть оба
+              текста ДО отметки, поэтому оба адреса стоят прямо здесь.
+              Чекбокс: required, НЕ предзаполнен. */}
+          <label class="order-form__consent">
+            <input type="checkbox" id="order-consent" name="consent" required aria-required="true" />
+            <span>Даю <a href="/soglasie-na-obrabotku-personalnyh-dannyh/" style="color:var(--yellow)">согласие на обработку персональных данных</a> и ознакомлен(а) с <a href="/politika-obrabotki-personalnyh-dannyh/" style="color:var(--yellow)">политикой обработки ПД</a></span>
+          </label>
+          <button class="btn" type="submit">Отправить заявку →</button>
+          <p class="order-form__status" id="order-status" role="status"></p>
+        </form>
+      </div>
+    </div>
+  </section>
+</main>
+
+<style>
+  /* ── Экран поиска ─────────────────────────────────────────────────────── */
+  .lookup { padding-block: clamp(30px, 5vw, 54px) clamp(20px, 3vw, 30px); }
+
+  /* Волна 122 — рамочная видео-панель. isolation:isolate создаёт новый
+     stacking context, чтобы z-index внутри панели не спорил с остальной
+     страницей. background на .lookup__media — это и есть постер-фоллбэк:
+     он висит ПОД видео всегда, а не только когда видео отключено — так
+     картинка уже на месте в момент, когда браузер только начинает грузить
+     видео (preload="none" означает, что до автовоспроизведения объект
+     некоторое время попросту пуст). */
+  .lookup__panel {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    border: 3px solid var(--yellow);
+    border-top-width: 0;
+    padding: clamp(26px, 4.4vw, 50px) clamp(20px, 4.6vw, 44px);
+    padding-top: calc(clamp(26px, 4.4vw, 50px) + 6px);
+  }
+  /* Волна 123. Собственный графический мотив сайта (hazard-штриховка,
+     объявленная в design-code.md) до этой волны в первый экран не попадал
+     ВООБЩЕ: во всём проекте он встречался единственный раз — образцом цвета
+     в легенде диаграммы на /park/. Здесь он становится верхней кромкой
+     главной панели: 10 px разметочной ленты по всей ширине вместо ещё
+     одной ровной жёлтой линии, которых на сайте и так четыре.
+     z-index: 2 — панель содержит видео и скрим со своими слоями, полоса
+     обязана лежать над ними. */
+  .lookup__panel::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; top: 0;
+    height: 10px;
+    z-index: 2;
+    background: var(--hazard);
+    pointer-events: none;
+    /* ЕДИНСТВЕННЫЙ АВТОРСКИЙ МОМЕНТ САЙТА (волна 123).
+       Взамен удалённой системы scroll-reveal, которая навешивала одинаковое
+       «всплывание» на всё подряд и по факту не была навешана ни на что.
+       Здесь лента раскатывается слева направо ровно один раз, на одном
+       элементе, на одной странице — это не эффект появления секции, а
+       жест: площадку размечают. Анимируется только transform, раскладка
+       не пересчитывается, вклад в CLS нулевой. */
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    animation: hazard-lay 760ms cubic-bezier(0.16, 1, 0.3, 1) 120ms forwards;
+  }
+  @keyframes hazard-lay { to { transform: scaleX(1); } }
+  @media (prefers-reduced-motion: reduce) {
+    .lookup__panel::before { animation: none; transform: scaleX(1); }
+  }
+  .lookup__media {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background: var(--bg-2) center / cover no-repeat;
+    /* Волна 39: WebP через image-set. Здесь фон, а не <img>, поэтому <picture>
+       неприменим — выбор формата делает сам браузер по image-set, а строка с
+       url() ниже остаётся как есть и продолжает работать там, где image-set не
+       поддержан. Порядок важен: сначала обычный url() (его поймут все), потом
+       image-set — он перезапишет свойство только в поддерживающем браузере.
+       Тот же файл стоит в poster у <video>, и там подмены нет: атрибут poster
+       принимает ровно один URL и согласования форматов не умеет — это
+       осознанное ограничение, а не недосмотр. 49 КБ вместо 77 КБ. */
+    background-image: url('/images/hero/hero-crane-poster.jpg');
+    background-image: image-set(
+      url('/images/hero/hero-crane-poster.webp') type('image/webp'),
+      url('/images/hero/hero-crane-poster.jpg') type('image/jpeg')
+    );
+  }
+  .lookup__video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  /* Диагональный скрим темнее слева (где текст) и легче справа (где схема) —
+     не плоская полупрозрачная плашка на всё видео, а честный контраст именно
+     там, где стоит текст, при этом видео читается на правом крае панели. */
+  .lookup__scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, rgba(13,13,13,.94) 0%, rgba(13,13,13,.88) 34%, rgba(13,13,13,.62) 64%, rgba(13,13,13,.4) 100%);
+  }
+  /* Требование ТЗ: reduced-motion скрывает <video> и показывает постер. Постер
+     уже лежит в background-image контейнера (см. .lookup__media выше) —
+     скрыть видео здесь и есть весь фоллбэк, без единой строчки JS. */
+  @media (prefers-reduced-motion: reduce) {
+    .lookup__video { display: none; }
+  }
+  .lookup__grid { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr auto; gap: clamp(24px, 5vw, 64px); align-items: center; }
+  .lookup h1 { font-size: var(--t-display); margin-top: 12px; max-width: 16ch; }
+  .lookup__lead { margin-top: 18px; max-width: 68ch; color: var(--muted); }
+  .lookup__form { margin-top: 26px; max-width: 640px; }
+  .lookup__label { display: block; font-size: var(--t-sm); font-weight: 600; color: var(--ink); margin-bottom: 8px; }
+  .lookup__input {
+    width: 100%;
+    background: var(--bg-2);
+    border: 2px solid var(--yellow);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--t-lead);
+    padding: 16px 18px;
+    min-height: 56px;
+  }
+  /* Подсказка длиннее поля и на телефоне обрезается на полуслове —
+     «наряд-допуск, освидетель». Многоточие превращает обрыв в намеренное
+     сокращение: то же поведение, что у любого длинного значения в таблице. */
+  .lookup__input::placeholder { color: var(--muted); text-overflow: ellipsis; }
+  .lookup__count { margin-top: 10px; font-size: var(--t-sm); color: var(--yellow); font-weight: 700; }
+  .lookup__topics { margin-top: 18px; max-width: 68ch; color: var(--muted); }
+  .lookup__hint { margin-top: 16px; max-width: 68ch; font-size: var(--t-md); color: var(--muted); }
+
+  /* Быстрые переходы первого экрана. Тот же приём чипа, что у букв указателя
+     (.idx__letters a ниже) — тонкая рамка + hazard-цвет на hover, — поэтому
+     новый ряд читается продолжением уже знакомого языка сайта, а не
+     отдельной панелью кнопок со стороны. */
+  .hero__quicknav { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .hero__quicknav a {
+    display: inline-flex;
+    align-items: center;
+    padding: 8px 14px;
+    border: 1px solid var(--line-strong);
+    background: var(--bg-2);
+    color: var(--ink);
+    font-size: var(--t-sm);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background var(--dur, .18s) ease, color var(--dur, .18s) ease, border-color var(--dur, .18s) ease;
+  }
+  .hero__quicknav a:hover,
+  .hero__quicknav a:focus-visible {
+    background: var(--yellow);
+    color: var(--bg);
+    border-color: var(--yellow);
+  }
+
+  /* Волна 124 / полоса ставки в первом экране.
+     Тот же язык, что у .lookup__stats ниже (hazard-полоса по кромке + плашка
+     --bg-2 + число ступенью --t-num жёлтым), а не новый элемент со стороны:
+     на странице появляется вторая «плашка с маркировкой», а не чужая кнопка.
+     Отличие от stats намеренное — полоса слева, не сверху: это не итог блока,
+     а врезка внутри колонки текста. */
+  .lookup__rate {
+    position: relative;
+    display: block;
+    margin-top: 22px;
+    max-width: 480px;
+    padding: 14px 16px 14px 22px;
+    background: var(--bg-2);
+    border: 1px solid var(--line-strong);
+    text-decoration: none;
+    color: var(--ink);
+  }
+  .lookup__rate::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 8px;
+    background: var(--hazard);
+  }
+  .lookup__rate-k { display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .lookup__rate-v {
+    display: block;
+    margin-top: 2px;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: var(--t-num);
+    line-height: 1;
+    color: var(--yellow);
+  }
+  .lookup__rate-v span { white-space: nowrap; }
+  /* «/ час» — единица, а не часть числа: кегль основного текста и цвет чернил,
+     иначе единица спорит с самой цифрой за внимание. */
+  .lookup__rate-v i { font-family: var(--sans); font-style: normal; font-weight: 700; font-size: var(--t-base); color: var(--ink); }
+  .lookup__rate-n { display: block; margin-top: 8px; font-size: var(--t-md); color: var(--muted); }
+  .lookup__rate:hover { border-color: var(--yellow); }
+  .lookup__rate:hover .lookup__rate-n { color: var(--ink); }
+
+  /* Волна 19: визуальный якорь — линейная техническая схема, не hero-кран.
+     min-width:0 на колонке текста не даёт auto-колонке графики раздувать грид
+     шире контейнера (частая причина горизонтальной прокрутки в grid 1fr auto). */
+  .lookup__col { min-width: 0; }
+  .lookup__art { width: clamp(150px, 20vw, 240px); flex-shrink: 0; }
+  .lookup__art svg { display: block; width: 100%; height: auto; }
+  @media (max-width: 760px) {
+    .lookup__grid { grid-template-columns: 1fr; }
+    /* Волна 124: 220 px схемы на телефоне — это треть экрана под знак, который
+       и в 160 px читается полностью (в нём четыре крупных элемента, мелкой
+       детали нет). Уменьшение поднимает всё, что идёт следом. */
+    .lookup__art { width: min(160px, 42vw); margin: clamp(20px, 5vw, 30px) auto 0; }
+
+    /* Волна 124 / ритм первого экрана на телефоне. Отступы 12/18/22/26 набраны
+       для широкой колонки; на 375 px они складываются в 78 px пустоты между
+       заголовком и полем поиска — при том что до сгиба с учётом закреплённой
+       CTA-панели остаётся всего 734 px. Сжаты до 10/14/16/20; воздух между
+       блоками остаётся, порядок ступеней (лид < врезка < форма) сохранён. */
+    /* Волна 124 / заголовок главной на телефоне.
+       --t-display ниже 652 px стоит полкой 35,2 px и не реагирует на ширину:
+       на 375 px «А ПОТОМ УЖЕ КРАН» не влезало в строку на 6 px, и после
+       отмены переносов (h1,h2 { hyphens: manual }) заголовок разъезжался на
+       ЧЕТЫРЕ строки, унося вместе с собой поле поиска за сгиб.
+       8,5vw держит ёмкость строки постоянной — ~17 знаков и на 320, и на
+       360, и на 375 px, — то есть три строки на всех трёх ширинах.
+       Верхняя граница 2rem не даёт кеглю превысить прежние 35,2 px,
+       десктопного значения токена правило не касается вообще.
+       max-width: 16ch мешает отдельно: на 320 px эта мера уже УЖЕ самой
+       колонки и режет строку раньше, чем её режет экран. На телефоне
+       ограничивать меру нечем — колонка и есть мера. */
+    .lookup h1 { font-size: clamp(1.5rem, 7.9vw, 2rem); margin-top: 10px; max-width: none; }
+    .lookup__lead { margin-top: 14px; }
+    /* --t-num — ступень «цифра-факт», рассчитанная на широкую плашку статистики
+       в четыре колонки. Во врезке шириной 246 px (это 320-й экран за вычетом
+       полей) «от 2 200 ₽ / час» в 30,4 px не помещается в строку и роняет
+       единицу на вторую. 7,4vw даёт 23,7 px на 320 и 27,8 на 375 — строка
+       целая на всех трёх ширинах, и число перестаёт быть КРУПНЕЕ заголовка
+       главной (29,6 px на 375): порядок «сначала заголовок, потом цена»
+       восстановлен. */
+    .lookup__rate { margin-top: 16px; padding: 12px 14px 12px 20px; }
+    .lookup__rate-v { font-size: clamp(1.6rem, 7.4vw, 1.9rem); }
+    .lookup__form { margin-top: 20px; }
+    .lookup__label { margin-bottom: 6px; }
+
+    /* Волна 124 / текст на светлом месте видео. Скрим набран диагональю 100°:
+       «темнее слева, где текст, легче справа, где схема». На широком экране
+       так и есть. На телефоне панель не широкая, а ВЫСОКАЯ (343 × ~1400), и
+       у диагонали в 100° при таком отношении сторон вектор почти вертикальный:
+       затемнение .94 остаётся вверху, а к низу панели падает до .4 — ровно
+       там, где в кадре открывается светлое небо и где лежат «Что разбираем»
+       и подсказка про поиск. Серый --muted на светлом кадре проваливается.
+       Схема на телефоне стоит ПОД текстом, а не сбоку от него, поэтому делить
+       панель по горизонтали здесь нечего: затемнение равномерное и чуть
+       плотнее к низу. Видео остаётся видимым — это фактура, а не картинка,
+       которую нужно рассматривать. */
+    .lookup__scrim {
+      background: linear-gradient(180deg, rgba(13,13,13,.90) 0%, rgba(13,13,13,.93) 45%, rgba(13,13,13,.95) 100%);
+    }
+  }
+
+  /* Та же подпись-конвенция, что у фото на /park/ и на страницах моделей
+     (см. .park-hero figcaption / .model-photo figcaption) — маленький муted-
+     текст под медиа с двумя ссылками (лицензия + конкретная страница). */
+  .lookup__vidcredit { margin-top: 10px; font-size: var(--t-xs); color: var(--muted); max-width: 80ch; }
+  .lookup__vidcredit a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+  .lookup__vidcredit a:hover { color: var(--yellow); }
+
+  /* Честные метрики справочника — метаданные о содержимом, не бизнес-цифры.
+     Волна 123: панель стала ПЛАШКОЙ С МАРКИРОВКОЙ. Было: жёлтая рамка 2px и
+     число 27,2 px — мельче, чем заголовок соседней секции, то есть самый
+     сильный факт первого экрана проигрывал служебному тексту. Стало:
+     hazard-полоса по верхней кромке (мотив сайта, а не декоративная рамка) и
+     число из ступени --t-num, заведомо крупнее любого h2. Цифры табличные —
+     четыре значения стоят в ряд и обязаны выравниваться по разрядам. */
+  .lookup__stats {
+    position: relative;
+    margin-top: clamp(28px, 4vw, 40px);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border: 2px solid var(--yellow);
+    border-top: none;
+    background: var(--bg-2);
+    padding-top: 8px;
+  }
+  .lookup__stats::before {
+    content: '';
+    position: absolute;
+    left: -2px; right: -2px; top: 0;
+    height: 8px;
+    background: var(--hazard);
+  }
+  .lookup__stat { padding: 16px 18px; display: grid; gap: 6px; border-left: 1px solid var(--line); }
+  .lookup__stat:first-child { border-left: none; }
+  .lookup__stat b { font-family: var(--display); font-weight: 400; font-size: var(--t-num); color: var(--yellow); line-height: 1; }
+  .lookup__stat--date b { font-size: var(--t-num-sm); }
+  .lookup__stat span { font-size: var(--t-xs); color: var(--muted); line-height: 1.35; }
+  @media (max-width: 640px) {
+    .lookup__stats { grid-template-columns: repeat(2, 1fr); }
+    .lookup__stat:nth-child(2n+1) { border-left: none; }
+    .lookup__stat:nth-child(n+3) { border-left: 1px solid var(--line); border-top: 1px solid var(--line); }
+    .lookup__stat:nth-child(3) { border-left: none; }
+  }
+  /* На 320 px в две колонки на ячейку остаётся ~140 px, а дата «12.08.2026»
+     в заголовочной гарнитуре не помещается в такую ширину ни при каком
+     разумном кегле. Одна колонка — и число снова читается как число. */
+  @media (max-width: 400px) {
+    .lookup__stats { grid-template-columns: 1fr; }
+    .lookup__stat { border-left: none; border-top: 1px solid var(--line); }
+    .lookup__stat:first-child { border-top: none; }
+    .lookup__stat:nth-child(n+3) { border-left: none; }
+  }
+
+  /* ── Предметный указатель ─────────────────────────────────────────────── */
+  .idx { padding-block: var(--sp-md); }
+  .idx__h { font-size: var(--t-h2); }
+  .idx__letters { display: flex; flex-wrap: wrap; gap: 4px; margin: 18px 0 24px; }
+  .idx__letters a {
+    min-width: 34px; min-height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line-strong);
+    font-family: var(--display); font-size: var(--t-md); text-decoration: none;
+  }
+  .idx__letters a:hover { background: var(--yellow); color: var(--bg); border-color: var(--yellow); }
+  .idx__body { display: grid; gap: 22px; }
+  /* scroll-margin-top обнулён волной 124: запас под липкую шапку задан один раз
+     в BaseLayout через html { scroll-padding-top: 94px }. */
+  .idx__group { display: grid; grid-template-columns: 56px 1fr; gap: 14px; align-items: start; border-top: 1px solid var(--line); padding-top: 14px; scroll-margin-top: 0; }
+  .idx__letter { font-family: var(--display); color: var(--yellow); font-size: var(--t-num); line-height: 1; }
+  /* min(260px, 100%) вместо голого 260px: auto-fill с жёстким минимумом не умеет
+     сжиматься ниже него и распирает страницу. На 320px под колонку остаётся
+     230px (320 − 36 отступов − 40 буква − 14 gap), трек требовал 260 — указатель
+     вылезал за край на 12px и давал горизонтальную прокрутку. Требование Яндекса
+     к мобильности — работа от 320px без прокрутки. */
+  .idx__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 2px 20px; }
+  /* padding-block, а не просто font-size: строка указателя — это тап-таргет,
+     и на телефоне 35px по высоте читались как «попал/не попал». */
+  .idx__item a {
+    display: block;
+    padding: 8px 0 8px 12px;
+    font-size: var(--t-md);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    border-left: 3px solid transparent;
+    transition: color 160ms ease, border-color 160ms ease, background-color 160ms ease;
+  }
+  /* Волна 19: та же подсветка, что у карточек парка/кейсов — radial-gradient
+     от края (не blur) + жёсткая офсетная граница слева вместо мягкой тени.
+     :focus-visible получает то же самое, что и :hover — клавиатурный пользователь
+     видит не только жёлтое кольцо от общего правила в BaseLayout, но и подсветку строки. */
+  .idx__item a:hover, .idx__item a:focus-visible {
+    color: var(--yellow);
+    border-bottom-color: var(--yellow);
+    border-left-color: var(--yellow);
+    background: radial-gradient(140px 70px at 0% 50%, rgba(255,214,0,.16), rgba(255,214,0,0) 78%);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .idx__item a { transition: none; }
+  }
+  .idx__empty { margin-top: 20px; padding: 16px 18px; background: var(--bg-2); border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box; max-width: 70ch; font-size: var(--t-md); }
+  @media (max-width: 560px) { .idx__group { grid-template-columns: 40px 1fr; } }
+
+  /* ── ШОВ МЕЖДУ ПЛИТАМИ (волна 123) ─────────────────────────────────────
+     Замер до правки: восемь секций главной подряд на ОДНОМ фоне с отступами
+     54/30, 40/40, 56/56, 40/40, 40/40, 40/40, 52/52, 56/77 — разброс внутри
+     погрешности, то есть страница читалась как один непрерывный столбец без
+     крупной формы. Теперь три различимые ступени ритма (40 / 68 / 104), а
+     две опорные секции получают ещё и шов: волосяная линия во всю колонку и
+     короткий отрезок разметки на ней слева. Это не «разделитель секции» из
+     набора приёмов, а стык двух плит — то же, чем сайт говорит о себе везде
+     остальное. Рисуется одним псевдоэлементом в два фоновых слоя. */
+  .chg::before, .homepark::after {
+    content: '';
+    position: absolute;
+    left: var(--pad); right: var(--pad); top: 0;
+    height: 3px;
+    pointer-events: none;
+    background:
+      var(--hazard) left top / 56px 3px no-repeat,
+      linear-gradient(var(--line), var(--line)) left center / 100% 1px no-repeat;
+  }
+
+  /* ── Что изменилось ───────────────────────────────────────────────────── */
+  .chg { padding-block: var(--sp-lg); position: relative; }
+  .chg__h { font-size: var(--t-h2); }
+  .chg__lead { margin-top: 14px; max-width: 70ch; color: var(--muted); }
+  .chg__list { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+  .chg__item { display: grid; grid-template-columns: 190px 1fr; gap: 18px; background: var(--bg-2); padding: 20px 22px; }
+  /* Волна 19: маркер «проверено» рядом с датой — живая фактура заметна с первого
+     взгляда, не только текстом «Сверено {CHECKED}» ниже списка. */
+  .chg__meta { display: flex; align-items: center; gap: 8px; }
+  .chg__mark { width: 20px; height: 20px; flex-shrink: 0; }
+  .chg__when { font-family: var(--display); color: var(--yellow); font-size: var(--t-md); text-transform: uppercase; line-height: 1.25; }
+  .chg__what { font-weight: 600; }
+  .chg__todo { margin-top: 8px; color: var(--muted); font-size: var(--t-md); }
+  .chg__link { display: inline-block; margin-top: 10px; color: var(--yellow); font-weight: 700; font-size: var(--t-md); text-decoration: none; }
+  .chg__link:hover { text-decoration: underline; }
+  @media (max-width: 720px) { .chg__item { grid-template-columns: 1fr; gap: 8px; } }
+
+  /* ── Три входа ────────────────────────────────────────────────────────── */
+  .paths { padding-block: var(--sp-md); }
+  .paths__h { font-size: var(--t-h2); }
+  .paths__lead { margin-top: 12px; max-width: 70ch; color: var(--muted); }
+  /* ЩИТОК НА ТРИ ПОЗИЦИИ (волна 123, взамен трёх одинаковых карточек).
+     Одна плашка, три ячейки, разделённые волосяной линией; сверху —
+     hazard-полоса. Наведение не поднимает ячейку и не наклоняет её: ячейка
+     — часть одного щитка, а «отрывающаяся» ячейка читалась бы как поломка
+     детали, а не как отклик. Вместо этого ячейка подсвечивается изнутри
+     (радиальное пятно от нижнего края) и внизу проявляется маркировочная
+     полоса — тот же мотив, что у кромки. Скрипт наклона .path-card из
+     волны 19 вместе с этим блоком удалён: он существовал только ради этих
+     трёх карточек, тилт на ячейках щитка не нужен, а 1,2 КБ JS на 144
+     страницах — не бесплатны. */
+  .paths__plate {
+    position: relative;
+    margin-top: 24px;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border: 1px solid var(--line-strong);
+    border-top: none;
+    background: var(--bg-2);
+    padding-top: 8px;
+  }
+  .paths__plate::before {
+    content: '';
+    position: absolute;
+    left: -1px; right: -1px; top: 0;
+    height: 8px;
+    background: var(--hazard);
+  }
+  .path-cell {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-content: start;
+    gap: 10px;
+    padding: 22px 24px 28px;
+    text-decoration: none;
+    border-left: 1px solid var(--line);
+    transition: background-color 200ms ease;
+  }
+  .path-cell:first-child { border-left: none; }
+  .path-cell::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 220ms cubic-bezier(0.22,1,0.36,1);
+    background: radial-gradient(120% 70% at 50% 118%, rgba(255,214,0,.16), rgba(255,214,0,0) 70%);
+  }
+  /* Маркировочная полоса у основания ячейки: вырастает от 0 до полной
+     ширины. Анимируется transform, а не width — раскладка не пересчитывается. */
+  .path-cell::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 5px;
+    background: var(--hazard);
+    transform: scaleX(0);
+    transform-origin: 0 50%;
+    transition: transform 260ms cubic-bezier(0.22,1,0.36,1);
+  }
+  .path-cell:hover, .path-cell:focus-visible { background-color: var(--bg); }
+  .path-cell:hover::after, .path-cell:focus-visible::after { opacity: 1; }
+  .path-cell:hover::before, .path-cell:focus-visible::before { transform: scaleX(1); }
+  .path-cell:active { background-color: #0A0A0A; }
+  .path-cell__kicker {
+    display: flex; align-items: center; gap: 9px;
+    color: var(--yellow); font-family: var(--display); font-size: var(--t-xs);
+    letter-spacing: .1em; text-transform: uppercase; line-height: 1.3;
+  }
+  .path-cell__kicker::before { content: ''; flex: none; width: 18px; height: 8px; background: var(--hazard-fine); }
+  .path-cell__title { font-family: var(--display); font-size: var(--t-lead); text-transform: uppercase; line-height: 1.2; }
+  /* Число — приём, а не подпись: оно и есть содержание ячейки. */
+  .path-cell__n {
+    display: block;
+    font-weight: 400;
+    font-size: var(--t-num);
+    font-variant-numeric: tabular-nums;
+    color: var(--yellow);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .path-cell__note { color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 860px) {
+    .paths__plate { grid-template-columns: 1fr; }
+    .path-cell { border-left: none; border-top: 1px solid var(--line); }
+    .path-cell:first-child { border-top: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .path-cell, .path-cell::after, .path-cell::before { transition: none; }
+    .path-cell:hover::before, .path-cell:focus-visible::before { transform: scaleX(1); }
+  }
+
+  /* ── Парк техники (фото-тилт-карточки) ───────────────────────────────────
+     Волна 122. .park-card сам по себе (базовые размеры/паддинг/бордер) задан
+     в src/pages/park/index.astro как СВОЙ <style> — Astro скоупит стили к файлу,
+     поэтому здесь park-card нужно определить заново, а не полагаться на чужой
+     файл. Наклон/подъём/тень/блик (:hover-состояния через var(--rx)/var(--ry)/
+     var(--gx)/var(--gy)) — общие ПРАВИЛА ИЗ BaseLayout (там же :global), их
+     переопределять не нужно и нельзя: тот же CSS уже применяется по селектору
+     `a.park-card` глобально ко всей сети. --photo — локальный модификатор
+     только этого файла: добавляет картинку сверху и не трогает transform/shadow
+     логику наведения, унаследованную от общего правила. */
+  .homepark { padding-block: var(--sp-lg); }
+  .homepark__h { font-size: var(--t-h2); }
+  .homepark__lead { margin-top: 12px; max-width: 74ch; color: var(--muted); }
+  .homepark__grid { margin-top: 24px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+  .homepark__more { margin-top: 18px; font-size: var(--t-md); }
+  .homepark__more a { color: var(--yellow); font-weight: 700; text-decoration: none; }
+  .homepark__more a:hover { text-decoration: underline; }
+  @media (max-width: 860px) { .homepark__grid { grid-template-columns: 1fr; } }
+
+  /* overflow НЕ hidden на самой карточке: box-shadow волны наведения рисуется
+     СНАРУЖИ border-box того же элемента — overflow:hidden на .park-card--photo
+     обрезал бы жёсткую тень 8px/10px справа/снизу при hover. Обрезка нужна
+     только картинке (aspect-ratio + object-fit cover уже даёт кроп сам по себе,
+     .park-card__photo ниже держит свой overflow:hidden отдельно). */
+  .park-card--photo { display: block; text-decoration: none; padding: 0 0 20px; background: var(--bg-2); border: 1px solid var(--line-strong); }
+  .park-card--photo:hover, .park-card--photo:focus-visible { border-color: var(--yellow); }
+  .park-card__photo { display: block; aspect-ratio: 4 / 3; overflow: hidden; background: var(--bg); }
+  .park-card__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .park-card--photo .park-card__type { display: block; margin: 16px 20px 0; color: var(--yellow); font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .park-card--photo h3 { margin: 10px 20px 0; font-size: var(--t-lead); text-transform: none; font-family: var(--sans); font-weight: 700; }
+  .park-card--photo .park-card__tonnage { display: block; margin: 8px 20px 0; color: var(--muted); font-size: var(--t-md); }
+
+  /* ── Инструмент ───────────────────────────────────────────────────────── */
+  .tool { padding-block: var(--sp-sm); }
+  .tool__inner { display: flex; gap: 24px; align-items: center; justify-content: space-between; flex-wrap: wrap; border: 2px solid var(--yellow); padding: 24px 26px; background: var(--bg-2); }
+  .tool__h { font-size: var(--t-h2); }
+  .tool__p { margin-top: 10px; max-width: 62ch; color: var(--muted); font-size: var(--t-md); }
+
+  /* ── Честно ───────────────────────────────────────────────────────────── */
+  .honest { padding-block: var(--sp-sm); }
+  .honest__h { font-size: var(--t-h2); }
+  .honest__box { margin-top: 16px; max-width: 76ch; border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box; padding-left: 18px; color: var(--muted); }
+  .honest__box p + p { margin-top: 14px; }
+
+  /* ── Коммерческий блок ────────────────────────────────────────────────── */
+  .comm { padding-block: var(--sp-lg) calc(var(--sp-lg) + 16px); border-top: 4px solid var(--yellow); margin-top: var(--sp-md); }
+  .comm__h { font-size: var(--t-h2); }
+  .comm__lead { margin-top: 12px; max-width: 74ch; color: var(--muted); }
+  .comm__grid { margin-top: 26px; display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px; }
+  /* Волна 37 (visual QA): grid-item по умолчанию min-width:auto — не сжимается
+     ниже min-content своего содержимого, даже когда сама сетка на мобильном
+     уже выше объявлена как 1fr. На 375px это давало 69px горизонтального
+     переполнения. min-width:0 — стандартный фикс именно этого класса бага. */
+  .comm__col { min-width: 0; }
+  .comm__h3 { font-size: 1rem; margin-bottom: 12px; }
+  .comm__services { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; font-size: var(--t-md); }
+  /* inline-block с вертикальным паддингом: это единственная навигация по услугам
+     на странице, 18px высоты для пальца мало (WCAG 2.5.8). */
+  .comm__services a { display: inline-block; padding-block: 6px; color: var(--yellow); font-weight: 600; text-decoration: none; }
+  .comm__services a:hover { text-decoration: underline; }
+  .comm__services span { color: var(--muted); }
+  .comm__more, .comm__geo { margin-top: 14px; font-size: var(--t-md); color: var(--muted); line-height: 1.9; }
+  .comm__more a, .comm__geo a { text-decoration: none; }
+  .comm__more a:hover, .comm__geo a:hover { color: var(--yellow); }
+  .comm__note { margin-top: 14px; font-size: var(--t-md); color: var(--muted); }
+
+  .pricebar__formula { font-size: var(--t-md); color: var(--muted); margin-bottom: 12px; }
+  .pricebar { border: 1px solid var(--line-strong); padding: 16px; display: grid; gap: 12px; background: var(--bg-2); }
+  .pricebar__row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .pricebar__field { display: grid; gap: 5px; font-size: var(--t-xs); color: var(--muted); font-weight: 600; min-width: 0; }
+  /* width:100% + min-width:0 обязательны: без них <select> берёт СВОЮ
+     естественную ширину по самому длинному пункту («16–20 т — 2 200 ₽/час»,
+     201px) и вылезает из колонки в 140px. На экране 360px — а это ширина
+     очень многих Android-телефонов — правый select уходил за край на 5px
+     и давал горизонтальную прокрутку всей страницы. min-width:0 на родителе
+     не помогает: ограничивать надо сам элемент формы. Проверено на проде. */
+  .pricebar__field select { background: var(--bg); border: 1px solid var(--line-strong); color: var(--ink); padding: 10px 11px; font-family: inherit; font-size: var(--t-md); min-height: 44px; width: 100%; min-width: 0; max-width: 100%; }
+  .pricebar__check { display: flex; align-items: center; gap: 10px; font-size: var(--t-md); min-height: 44px; cursor: pointer; }
+  .pricebar__check input { width: 20px; height: 20px; accent-color: var(--yellow); flex-shrink: 0; }
+  .pricebar__out { border-top: 1px dashed var(--line); padding-top: 12px; display: grid; gap: 4px; }
+  .pricebar__out span { font-size: var(--t-xs); color: var(--muted); }
+  /* Волна 39: явный font-weight: 400. У Russo One ровно одно начертание, а <b> по умолчанию UA получает bold — браузер рисовал СИНТЕТИЧЕСКИЙ жир: обводит контур сам, и на квадратном гротеске это читается как замыленное число, а не как акцент. Именно эти <b> — самые крупные цифры сайта. */
+  .pricebar__out b { font-family: var(--display); font-weight: 400; font-size: var(--t-num); color: var(--yellow); }
+
+  .order-form { display: grid; gap: 10px; }
+  .order-form__consent { display: flex; align-items: flex-start; gap: 10px; font-size: var(--t-md); color: var(--muted); cursor: pointer; }
+  /* .order-form input задаёт padding/min-height/фон/рамку под ТЕКСТОВЫЕ поля — без явного
+     сброса этих же свойств здесь чекбокс унаследовал бы их (тот же баг, что и у
+     honeypot ниже: min-height бьёт inline height). Сбрасываем всё явно, оставляем
+     только форму/размер/отступ самого чекбокса. */
+  .order-form__consent input[type="checkbox"] {
+    flex-shrink: 0; width: 20px; height: 20px; min-height: 0; margin: 1px 0 0;
+    padding: 0; background: none; border: 1px solid var(--line-strong);
+    accent-color: var(--yellow);
+  }
+  .order-form input, .order-form select { background: var(--bg-2); border: 1px solid var(--line-strong); color: var(--ink); padding: 13px 14px; font-family: inherit; font-size: 1rem; min-height: 48px; }
+  /* Волна 37: .order-form input задаёт padding/min-height/фон под ТЕКСТОВЫЕ поля —
+     honeypot #order-website наследовал бы их, если явно не сбросить (тот же баг,
+     что и у чекбокса согласия выше). Офскрин-позиционирование и так скрывает поле
+     визуально при любом реальном размере, но правильная гигиена — сброс явный. */
+  #order-website { padding: 0; min-height: 0; border: 0; background: none; }
+  .order-form input::placeholder { color: var(--muted); }
+  .order-form__label { font-size: var(--t-sm); font-weight: 600; color: var(--ink); margin-top: 6px; }
+  .order-form__req { color: var(--yellow); font-weight: 700; }
+  .order-form .btn { margin-top: 6px; min-height: 48px; justify-content: center; }
+  .order-form__status { font-size: var(--t-md); line-height: 1.5; }
+  .order-form__status:not(:empty) { margin-top: 4px; padding: 12px 14px; background: var(--bg-2); border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box; color: var(--ink); }
+
+  @media (max-width: 980px) { .comm__grid { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  // Волна 35: адрес обработчика заявок (Cloudflare Worker → Telegram).
+  // Задеплоен и боевой с 17.08.2026 — заявки реально доходят до Telegram,
+  // это не демо. Поле site в теле запроса — слаг этого сайта (moskran),
+  // приёмник по нему понимает, откуда пришла заявка.
+  const LEAD_ENDPOINT = 'https://kran-network-leads.kran-network-leads.workers.dev/submit';
+
+  // Фильтр указателя. Ничего не грузит, ничего не отправляет: haystack уже
+  // лежит в data-hay каждой строки.
+  try { (function initLookup() {
+    const input = document.getElementById('q') as HTMLInputElement | null;
+    const count = document.getElementById('q-count');
+    const empty = document.getElementById('q-empty');
+    const items = Array.from(document.querySelectorAll<HTMLElement>('.idx__item'));
+    const groups = Array.from(document.querySelectorAll<HTMLElement>('.idx__group'));
+    const letters = Array.from(document.querySelectorAll<HTMLAnchorElement>('.idx__letters a'));
+    if (!input || !count || !empty || !items.length) return;
+
+    const total = items.length;
+    let timer = 0;
+
+    function apply() {
+      // ё→е: «наряд-допуск» ищут и через «е», и через «ё»; регистр не важен.
+      const q = input!.value.trim().toLowerCase().replace(/ё/g, 'е');
+      let shown = 0;
+      items.forEach((li) => {
+        const hay = (li.dataset.hay || '').replace(/ё/g, 'е');
+        const hit = !q || hay.includes(q);
+        li.hidden = !hit;
+        if (hit) shown++;
+      });
+      // Буква исчезает вместе со своими терминами, иначе остаётся пустой скелет.
+      groups.forEach((g) => {
+        const alive = Array.from(g.querySelectorAll<HTMLElement>('.idx__item')).some((li) => !li.hidden);
+        g.hidden = !alive;
+        const letter = g.dataset.letter;
+        const nav = letters.find((a) => a.getAttribute('href') === '#bukva-' + letter);
+        if (nav) nav.hidden = !alive;
+      });
+      empty!.hidden = shown !== 0;
+      count!.textContent = q
+        ? `Найдено терминов: ${shown} из ${total}`
+        : `Показано терминов: ${total}`;
+    }
+
+    // Живой ввод дебаунсится: на каждой букве переобход 120 строк не нужен,
+    // а объявление live-региона на каждый символ превратилось бы в бубнёж.
+    input.addEventListener('input', () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(apply, 120);
+    });
+    // Escape очищает поле и возвращает указатель целиком — привычный жест
+    // для строки поиска, без него приходится стирать вручную.
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && input.value) {
+        input.value = '';
+        apply();
+      }
+    });
+  })(); } catch (e) { console.error("initLookup failed", e); }
+
+  // Ориентир по стоимости. Формула и ставки перенесены из прежнего визарда
+  // без единого изменения: ставка × 8 × смены, ×1.12 при пропускном режиме.
+  try { (function initPricebar() {
+    const rate = document.getElementById('pb-rate') as HTMLSelectElement | null;
+    const shifts = document.getElementById('pb-shifts') as HTMLSelectElement | null;
+    const pass = document.getElementById('pb-pass') as HTMLInputElement | null;
+    const out = document.getElementById('pb-total');
+    if (!rate || !shifts || !pass || !out) return;
+
+    function recalc() {
+      let sum = Number(rate!.value) * 8 * Number(shifts!.value);
+      if (pass!.checked) sum = Math.round(sum * 1.12);
+      out!.textContent = 'от ' + sum.toLocaleString('ru-RU') + ' ₽';
+    }
+    rate.addEventListener('change', recalc);
+    shifts.addEventListener('change', recalc);
+    pass.addEventListener('change', recalc);
+    recalc();
+  })(); } catch (e) { console.error("initPricebar failed", e); }
+
+  // Волна 35: реальная отправка в lead-relay. Текст статуса уходит в live-регион
+  // role="status", а не в alert(): его можно перечитать, и скринридер объявит
+  // его на месте. Пока LEAD_ENDPOINT — плейсхолдер (воркер не задеплоен), сеть
+  // не резолвит домен и fetch падает — это ожидаемо ловится честным фоллбэком,
+  // тем же текстом, что раньше показывался всегда в демо-режиме.
+  try { (function initOrderForm() {
+    const form = document.querySelector<HTMLFormElement>('.order-form');
+    const status = document.getElementById('order-status');
+    const submitBtn = form?.querySelector<HTMLButtonElement>('button[type="submit"]') ?? null;
+    if (!form || !status) return;
+
+    const FALLBACK_TEXT =
+      'Форма пока работает в демо-режиме: приём заявок с сайта ещё не подключён, и эта заявка НЕ отправлена. Чтобы заказать кран сегодня, позвоните: +7 (903) 269-00-60.';
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      const nameEl = document.getElementById('order-name') as HTMLInputElement | null;
+      const phoneEl = document.getElementById('order-phone') as HTMLInputElement | null;
+      const districtEl = document.getElementById('order-district') as HTMLSelectElement | null;
+      const honeypotEl = document.getElementById('order-website') as HTMLInputElement | null;
+
+      // Волна 39 — ловушка теперь действительно ловит. Раньше значение скрытого
+      // поля просто уезжало на сервер вместе с заявкой, и решение принималось
+      // где-то дальше по цепочке; со стороны страницы бот и человек были
+      // неотличимы, а запрос уходил в любом случае. Поле физически недоступно
+      // человеку (за пределами экрана, aria-hidden, tabindex=-1, без label и без
+      // autocomplete) — если в нём что-то есть, это автозаполнение робота.
+      // Отправку молча выбрасываем: сеть не трогаем вовсе.
+      // Текст статуса намеренно тот же, что при обычном исходе, — иначе бот по
+      // разнице ответов вычислит ловушку за одну попытку и начнёт её обходить.
+      if (honeypotEl && honeypotEl.value.trim() !== '') {
+        status.textContent = 'Заявка отправлена, мы перезвоним.';
+        return;
+      }
+
+      status.textContent = 'Отправляем…';
+      if (submitBtn) submitBtn.disabled = true;
+
+      // ЗАЩИТА ОТ ОТПРАВКИ ТЕСТОВЫХ ЗАЯВОК В БОЕВОЙ ПРИЁМНИК.
+      // Обработчик заявок пересылает заявку живому человеку в Telegram, то есть
+      // на том конце сидит не тестовый стенд. Любая проверка формы с локального
+      // dev-сервера доходила до него как настоящий лид: так уже случилось трижды.
+      // Ниже запрос физически не уходит, если страница открыта не на боевом домене.
+      // Вся остальная логика (статусы, разблокировка кнопки, разбор ответа)
+      // работает как обычно — форму можно проверять, не мусоря в чате.
+      const leadRelayFetch = (url: string, init?: RequestInit): Promise<Response> => {
+        const h = typeof location !== 'undefined' ? location.hostname : '';
+        const isLocal =
+          /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(h) ||
+          h.endsWith('.local') ||
+          (typeof location !== 'undefined' && location.protocol === 'file:');
+        if (isLocal) {
+          // Лог намеренно не пишем: подпись в консоли одинаково узнаваема и
+          // ничего не даёт разработчику сверх видимого статуса на форме.
+          return Promise.resolve(
+            new Response(JSON.stringify({ ok: true, dryRun: true }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            }),
+          );
+        }
+        return fetch(url, init);
+      };
+      leadRelayFetch(LEAD_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          site: 'moskran',
+          name: nameEl?.value ?? '',
+          phone: phoneEl?.value ?? '',
+          district: districtEl?.value ?? '',
+          page: location.pathname,
+          website: honeypotEl?.value ?? '',
+        }),
+      })
+        .then(async (res) => {
+          let payload: { ok?: boolean } | null = null;
+          try {
+            payload = await res.json();
+          } catch {
+            payload = null;
+          }
+          if (res.ok && payload && payload.ok === true) {
+            status.textContent = 'Заявка отправлена, мы перезвоним.';
+          } else {
+            status.textContent = FALLBACK_TEXT;
+          }
+        })
+        .catch(() => {
+          status.textContent = FALLBACK_TEXT;
+        })
+        .finally(() => {
+          if (submitBtn) submitBtn.disabled = false;
+        });
+    });
+  })(); } catch (e) { console.error("initOrderForm failed", e); }
+
+  // Волна 123. Скрипт initPathCardTilt (3D-наклон карточек «Три входа», волна 19)
+  // удалён вместе с самими карточками: блок стал одним щитком с тремя ячейками,
+  // и наклон отдельной ячейки читался бы как отвалившаяся деталь, а не как отклик.
+  // Подсветка ячейки теперь целиком на CSS — отдельного контроллера не требуется.
+
+</script>
+</BaseLayout>

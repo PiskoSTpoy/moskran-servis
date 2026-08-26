@@ -1,0 +1,155 @@
+---
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import Sources from '../../../components/Sources.astro';
+import ModelPrice from '../../../components/ModelPrice.astro';
+
+const title = 'Автокран Liebherr LTM 1050-3.1 — технические характеристики';
+const description = 'Liebherr LTM 1050-3.1: грузоподъёмность 50 т, стрела 38 м, высота подъёма 55 м, гусёк 16 м. Технические характеристики немецкого автокрана.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Парк техники', item: 'https://moskran-servis.ru/park/' },
+    { '@type': 'ListItem', position: 3, name: 'Liebherr LTM 1050-3.1', item: 'https://moskran-servis.ru/park/liebherr-ltm-1050/' },
+  ],
+};
+
+// Волна 33 / цена. 50 т — тот же тариф класса «50 т», что и у остальных 50-тонных
+// автокранов парка (см. комментарий в park/galichanin-ks-65713-1/index.astro): 3900 ₽/час
+// (rates[] в src/pages/index.astro, тот же тариф текстом на /uslugi/arenda-avtokrana-40-50-tonn/)
+// × 8 ч = 31 200 ₽/смена. Держим тот же стартовый ориентир «от», что и для отечественных
+// аналогов этого тоннажа: премиальный импортный кран объективно может стоить на рынке
+// дороже за счёт увеличенного вылета (WebSearch подтверждает диапазон 2750–5000 ₽/час
+// для 50-тонного класса в Москве — msp-moscow.ru, umiat-termo.ru, trans-alex.ru,
+// mosvektor.ru, kran4rent.ru), но публиковать отдельную, более высокую цифру только для
+// этой модели значило бы вводить не проверенный отдельно факт о наценке — поэтому
+// показываем ту же минимальную ставку класса, без надуманного «премиум-коэффициента».
+const priceValue = '31 200';
+const priceUnit = 'смена';
+const priceNote = 'Смена — 8 часов, минимальный заказ. Точный расчёт под вылет и надбавки — калькулятор на главной.';
+const priceLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Product',
+  name: 'Liebherr LTM 1050-3.1',
+  category: 'Автокран',
+  offers: {
+    '@type': 'Offer',
+    // Аренда, а НЕ продажа. Без явного businessFunction значение по умолчанию —
+    // Sell, то есть разметка объявляла бы продажу крана за эту сумму. Техника
+    // передаётся во временное пользование (с экипажем, ст. 632 ГК) — LeaseOut.
+    businessFunction: 'http://purl.org/goodrelations/v1#LeaseOut',
+    priceCurrency: 'RUB',
+    price: '31200',
+    areaServed: 'Москва',
+    priceValidUntil: '2027-02-17',
+    seller: { '@id': 'https://moskran-servis.ru/#organization' },
+    priceSpecification: { '@type': 'UnitPriceSpecification', price: '31200', priceCurrency: 'RUB', unitText: 'SHIFT' },
+  },
+};
+---
+<BaseLayout title={title} description={description} path="/park/liebherr-ltm-1050/" ldExtra={[breadcrumbLd, priceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/park/">Парк техники</a><span>/</span><span>Liebherr LTM 1050-3.1</span>
+  </nav>
+  <section class="section wrap prose" style="padding-top:8px;max-width:820px">
+    <span class="eyebrow">Автокран · 50 тонн</span>
+    <h1 style="margin:14px 0 20px">Liebherr LTM 1050-3.1</h1>
+    <ModelPrice value={priceValue} unit={priceUnit} note={priceNote} />
+    <figure class="model-art model-art--mobile">
+      <svg viewBox="0 0 440 260" role="img" focusable="false" aria-label="Чертёж автокрана Liebherr LTM 1050-3.1: грузоподъёмность 50 т, стрела 38 м, гусёк 16 м, высота подъёма 55 м, максимальная транспортная скорость 80 км/ч">
+        <defs>
+          <pattern id="lt-dots" width="16" height="16" patternUnits="userSpaceOnUse">
+            <circle cx="1.3" cy="1.3" r="1.2" fill="var(--line-strong)" />
+          </pattern>
+          <marker id="lt-tick" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto">
+            <path d="M5 0 V10" stroke="var(--yellow)" stroke-width="1.4" />
+          </marker>
+        </defs>
+        <rect x="6" y="6" width="428" height="248" fill="url(#lt-dots)" opacity="0.3" />
+        <rect x="6" y="6" width="428" height="248" fill="none" stroke="var(--line-strong)" stroke-width="1.4" stroke-dasharray="2 7" />
+        <g stroke="var(--yellow)" stroke-width="2.5" stroke-linecap="square" fill="none">
+          <path d="M6 26 V6 H26" />
+          <path d="M414 6 H434 V26" />
+          <path d="M434 234 V254 H414" />
+          <path d="M26 254 H6 V234" />
+        </g>
+
+        <line x1="14" y1="225" x2="426" y2="225" stroke="var(--muted)" stroke-width="1.6" />
+
+        <path d="M22 225 V195 L45 195 L60 214 V225 Z" fill="none" stroke="var(--ink)" stroke-width="1.6" />
+        <rect x="10" y="128" width="44" height="14" fill="none" stroke="var(--yellow)" stroke-width="1.2" />
+        <text x="32" y="138" font-family="var(--sans)" font-size="8" fill="var(--yellow)" text-anchor="middle" font-weight="700">80 км/ч</text>
+        <rect x="50" y="176" width="190" height="34" fill="none" stroke="var(--ink)" stroke-width="1.8" />
+        <circle cx="70" cy="225" r="13" fill="var(--bg-2)" stroke="var(--ink)" stroke-width="1.6" />
+        <circle cx="105" cy="225" r="13" fill="var(--bg-2)" stroke="var(--ink)" stroke-width="1.6" />
+        <circle cx="175" cy="225" r="13" fill="var(--bg-2)" stroke="var(--ink)" stroke-width="1.6" />
+        <circle cx="210" cy="225" r="13" fill="var(--bg-2)" stroke="var(--ink)" stroke-width="1.6" />
+
+        <path d="M55 210 L40 225" stroke="var(--muted)" stroke-width="1.6" />
+        <rect x="34" y="221" width="9" height="6" fill="var(--muted)" />
+        <path d="M235 210 L250 225" stroke="var(--muted)" stroke-width="1.6" />
+        <rect x="247" y="221" width="9" height="6" fill="var(--muted)" />
+
+        <rect x="185" y="148" width="45" height="28" fill="none" stroke="var(--ink)" stroke-width="1.8" />
+        <line x1="210" y1="150" x2="395" y2="55" stroke="var(--ink)" stroke-width="3.2" />
+        <line x1="395" y1="55" x2="428" y2="28" stroke="var(--muted)" stroke-width="2" />
+        <line x1="428" y1="28" x2="415" y2="70" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="1 3" />
+        <path d="M411 70 h8 l-3 7 h-2 z" fill="none" stroke="var(--ink)" stroke-width="1.4" />
+
+        <text x="215" y="140" font-family="var(--sans)" font-size="9" fill="var(--ink)" text-anchor="middle" font-weight="700">50 т</text>
+        <text x="300" y="93" font-family="var(--sans)" font-size="9" fill="var(--ink)" text-anchor="middle" font-weight="700">38 м</text>
+        <text x="368" y="18" font-family="var(--sans)" font-size="8" fill="var(--muted)" text-anchor="start">гусёк 16 м</text>
+
+        <g stroke="var(--line-strong)" stroke-width="1.2">
+          <line x1="428" y1="28" x2="418" y2="28" />
+          <line x1="415" y1="225" x2="418" y2="225" />
+        </g>
+        <line x1="418" y1="28" x2="418" y2="225" stroke="var(--yellow)" stroke-width="1.4" marker-start="url(#lt-tick)" marker-end="url(#lt-tick)" />
+        <text x="424" y="128" font-family="var(--sans)" font-size="10" font-weight="700" fill="var(--yellow)" text-anchor="middle" transform="rotate(90 424 128)">55 м</text>
+      </svg>
+      <figcaption>Схема силуэта — не масштабный чертёж, цифры на выносках соответствуют таблице характеристик ниже.</figcaption>
+    </figure>
+    <p>Немецкий автокран premium-класса — при том же классе грузоподъёмности, что и отечественные аналоги, даёт больший вылет и высоту подъёма за счёт более длинной стрелы, что расширяет диапазон задач, доступных без замены техники на более тяжёлый класс.</p>
+
+    <table class="ttx">
+      <tbody>
+        <tr><td>Грузоподъёмность</td><td>50 т</td></tr>
+        <tr><td>Длина стрелы</td><td>38 м</td></tr>
+        <tr><td>Максимальная высота подъёма</td><td>55 м</td></tr>
+        <tr><td>Удлинитель стрелы (гусёк)</td><td>16 м</td></tr>
+        <tr><td>Максимальная транспортная скорость</td><td>80 км/ч</td></tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin:32px 0 14px">Где применяется</h2>
+    <p>За счёт увеличенной длины стрелы и высоты подъёма (55 м против типичных 40–45 м у отечественных аналогов этого тоннажа) эта модель — предпочтительный вариант, когда задача требует не столько грузоподъёмности, сколько досягаемости: работа через уже возведённую часть здания, монтаж на кровлю высотных объектов, задачи с увеличенным вылетом. Мобильность и скорость подачи техники по городу также выше за счёт более современного шасси.</p>
+    <p>Подробнее о задачах для этого класса грузоподъёмности — на странице услуги <a href="/uslugi/arenda-avtokrana-40-50-tonn/" style="color:var(--yellow)">«Автокраны 40–50 тонн»</a>.</p>
+  </section>
+  <section class="section wrap prose" style="padding-top:0;max-width:820px">
+    <h2 style="margin-bottom:16px">Что проверяют у этой машины перед выездом</h2>
+    <p>Импортная машина премиального класса не выводится из-под российских правил эксплуатации: выпуск в обращение подтверждается по техническому регламенту Таможенного союза, а работа на объекте идёт по федеральным нормам и правилам промышленной безопасности. Оба документа нужны, ни один не заменяет другой.</p>
+    <p>Освидетельствование: частичное — не реже раза в 12 месяцев, полное — не реже раза в 3 года, с записью в паспорт и датой следующего. Для машины иностранного производства отдельно проверяем, что записи ведутся на русском языке и что паспорт соответствует конкретному заводскому номеру, а не модели вообще.</p>
+    <p>Длинная стрела 38 м плюс гусёк 16 м — это досягаемость 55 м по высоте, и вместе с ней вероятность оказаться в 30 м от воздушной линии. Наряд-допуск в такой конфигурации — рабочая, а не исключительная ситуация.</p>
+    <h2 style="margin:34px 0 16px">Когда длинная стрела важнее тоннажа</h2>
+    <p>Задачи, где машину нельзя подвинуть ближе: работа через уже возведённую часть здания, подача на кровлю за парапет, монтаж поверх препятствия. Здесь решает не паспортный максимум, а строка характеристики на большом вылете — и именно поэтому 50-тонная машина с длинной стрелой закрывает то, что 50-тонная с короткой не закроет.</p>
+    <p style="margin-top:18px">Импортная пятидесятитонница живёт по тем же городским правилам, что и отечественная: пропуск и регистрация нужны одинаково. Проверить комплект можно по <a href="/proverka-dokumentov/" style="color:var(--yellow)">чек-лист допуска</a>, запросить машину — через <a href="/#zayavka" style="color:var(--yellow)">форму на главной</a>.</p>
+    <Sources
+      checked="12.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 111 — откос выемки, п. 138 — пуск в работу, п. 165 — периодичность освидетельствования, п. 171 и 179 — нагрузки при испытаниях, п. 189 — запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Единый транспортный портал Москвы — пропуск для ТС с разрешённой массой свыше 3,5 т в границах МКАД и регистрация в РНИС', href: 'https://transport.mos.ru/gruzoviki/perevod_ckad' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .ttx { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: var(--t-md); }
+  .ttx td { padding: 10px 14px; border-bottom: 1px solid var(--line); }
+  .ttx td:first-child { color: var(--muted); width: 45%; }
+  .model-art { width: min(100%, 480px); margin: 20px 0 6px; }
+  .model-art svg { display: block; width: 100%; height: auto; }
+  .model-art figcaption { margin-top: 10px; font-size: var(--t-sm); color: var(--muted); max-width: 60ch; }
+</style>
+</BaseLayout>

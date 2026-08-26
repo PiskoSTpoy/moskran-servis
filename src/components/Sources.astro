@@ -1,0 +1,57 @@
+---
+// Блок «Источники, проверено <дата>».
+//
+// Зачем компонент, а не абзац на каждой странице: фактура протухает. Норму
+// переиздают, постановление отменяют, ставку меняют — и страница, где не видно
+// ДАТЫ ПРОВЕРКИ, тихо превращается в дезинформацию. Единый компонент гарантирует,
+// что дата стоит везде в одном месте и в одном формате, и что её нельзя забыть:
+// проп `checked` обязателен.
+//
+// Ссылки открываются в новой вкладке с rel="noopener" — уводить читателя с
+// нормативной страницы на текст закона и обратно неудобно.
+export interface Props {
+  /** Дата последней сверки фактов страницы с источниками, формат ДД.ММ.ГГГГ. */
+  checked: string;
+  /** Источники. href необязателен: часть норм не имеет стабильного публичного URL. */
+  items: { text: string; href?: string }[];
+  /** Дополнительная оговорка под списком (например, что цифру проверить не удалось). */
+  note?: string;
+}
+const { checked, items, note } = Astro.props;
+---
+<aside class="srcs" aria-label="Источники">
+  <p class="srcs__head">Источники, проверено {checked}</p>
+  <ul class="srcs__list">
+    {items.map((s) => (
+      <li>
+        {s.href
+          ? <a href={s.href} target="_blank" rel="noopener">{s.text}</a>
+          : <span>{s.text}</span>}
+      </li>
+    ))}
+  </ul>
+  {note && <p class="srcs__note">{note}</p>}
+</aside>
+
+<style>
+  .srcs {
+    margin-top: 30px;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    font-size: var(--t-sm);
+    color: var(--muted);
+    max-width: 80ch;
+  }
+  .srcs__head {
+    font-family: var(--display);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-size: var(--t-xs);
+    color: var(--yellow);
+    margin-bottom: 8px;
+  }
+  .srcs__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 5px; }
+  .srcs__list a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+  .srcs__list a:hover { color: var(--yellow); }
+  .srcs__note { margin-top: 10px; font-style: normal; }
+</style>

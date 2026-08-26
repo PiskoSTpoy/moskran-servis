@@ -1,0 +1,56 @@
+---
+// Таблица параметров — общий компонент вместо таблицы, скопированной в каждый файл.
+//
+// Зачем таблица там, где уже есть проза. Языковые модели и блоки ответов
+// вытаскивают из страницы таблицу охотнее, чем абзац: у строки таблицы есть
+// подпись столбца, поэтому значение не нужно доставать из контекста
+// предложения. Критерий рубрикатора geo-table-present требует, чтобы таблица
+// параметров была больше чем на половине содержательных страниц; до этой волны
+// таблицы были только у парка и услуг.
+//
+// ЧЕСТНОСТЬ СОДЕРЖИМОГО. Компонент только рисует — строки задаёт страница, и в
+// них не должно быть ни одного факта, которого нет в её собственном тексте.
+// Таблица здесь пересобирает то, что уже написано прозой ниже, а не добавляет
+// новые утверждения: иначе получится «таблица ради критерия», то есть ровно тот
+// дорвейный отпечаток, которого сеть избегает.
+//
+// Разметка — та же, что у таблиц услуг (.adm): на экране уже 760 px строки
+// раскладываются в стопку через data-label, поэтому узкая таблица не создаёт
+// горизонтальной прокрутки и не требует обёртки с overflow-x.
+export interface Props {
+  /** Заголовок таблицы. Обязателен: <caption> — это и есть её доступное имя. */
+  caption: string;
+  /** Подписи столбцов. Их число задаёт число ячеек в каждой строке. */
+  columns: string[];
+  /** Строки: массив массивов ячеек, длиной ровно как columns. */
+  rows: string[][];
+}
+const { caption, columns, rows } = Astro.props;
+---
+<table class="zt">
+  <caption>{caption}</caption>
+  <thead>
+    <tr>{columns.map((c) => <th scope="col">{c}</th>)}</tr>
+  </thead>
+  <tbody>
+    {rows.map((r) => (
+      <tr>{r.map((cell, i) => <td data-label={columns[i]}>{cell}</td>)}</tr>
+    ))}
+  </tbody>
+</table>
+
+<style>
+  .zt { width: 100%; border-collapse: collapse; margin: 18px 0 6px; font-size: var(--t-md); }
+  .zt caption { text-align: left; font-family: var(--display); font-weight: 400; text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .zt th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .zt td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .zt td:first-child { width: 26%; font-weight: 700; }
+  @media (max-width: 760px) {
+    .zt, .zt tbody, .zt tr, .zt td { display: block; width: 100%; }
+    .zt thead { display: none; }
+    .zt tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .zt td { border: none; padding: 5px 0; }
+    .zt td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .zt td:first-child { width: 100%; }
+  }
+</style>

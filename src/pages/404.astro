@@ -1,0 +1,21 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+<BaseLayout title="Страница не найдена — МОСКРАН-СЕРВИС" description="Запрошенная страница не найдена. Перейдите на главную или в раздел услуг." path="/404/">
+<main>
+  <section class="section wrap" style="text-align:center">
+    <span class="eyebrow">404</span>
+    <h1 style="font-size:var(--t-h1);margin-top:14px">Такой страницы нет</h1>
+    <p style="color:var(--muted);margin-top:14px;max-width:60ch;margin-inline:auto">Возможно, ссылка устарела или в адресе опечатка. Вот что точно есть на сайте:</p>
+    <div class="links404">
+      <a class="btn" href="/">На главную</a>
+      <a class="btn" href="/uslugi/arenda-avtokrana-16-25-tonn/">Автокраны 16–25 т</a>
+      <a class="btn" href="/uslugi/kran-na-rezhimnyy-obekt/">Кран на режимный объект</a>
+      <a class="btn" href="/spravochnik/">Справочник</a>
+    </div>
+  </section>
+</main>
+<style>
+  .links404 { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-top: 30px; }
+</style>
+</BaseLayout>

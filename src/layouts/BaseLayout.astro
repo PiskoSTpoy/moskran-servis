@@ -1,0 +1,1058 @@
+---
+export interface Props {
+  title: string;
+  description: string;
+  path: string;
+  ldExtra?: object[];
+}
+const { title, description, path, ldExtra = [] } = Astro.props;
+const SITE = 'https://moskran-servis.ru';
+const BRAND = 'МОСКРАН-СЕРВИС';
+
+/* Волна 39 — узел организации ровно один на страницу.
+   Раньше их было три: LocalBusiness (@id .../#business), Organization
+   (@id .../#organization) и — на 45 страницах справочника — ещё author
+   Article'а с @id .../#organization, но с ДРУГИМ name («Инженерная служба
+   МОСКРАН-СЕРВИС»). Для парсера это выглядело как две-три разные организации
+   на одной странице (LocalBusiness — подтип Organization, отдельный узел
+   Organization рядом с ним не добавляет ничего, кроме двусмысленности), а
+   один и тот же @id с разными name — прямое противоречие в графе.
+   Теперь: один узел LocalBusiness с каноническим @id .../#organization, все
+   остальные упоминания (seller, provider, author, publisher) — ссылки по
+   этому же @id. Идентификатор .../#business выведен из употребления во всех
+   46 файлах, где на него ссылались. */
+const ldBusiness = {
+  '@context': 'https://schema.org',
+  '@type': 'LocalBusiness',
+  '@id': SITE + '/#organization',
+  name: BRAND,
+  telephone: '+79032690060',
+  email: 'info@moskran-servis.ru',
+  url: SITE,
+  priceRange: '₽₽',
+  address: { '@type': 'PostalAddress', addressLocality: 'Москва', addressCountry: 'RU' },
+  geo: { '@type': 'GeoCoordinates', latitude: 55.7558, longitude: 37.6173 },
+  areaServed: 'Москва',
+  openingHours: 'Mo-Su 00:00-24:00',
+};
+const ldWebsite = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  '@id': SITE + '/#website',
+  name: BRAND,
+  url: SITE,
+  inLanguage: 'ru-RU',
+};
+/* Волна 39: WebSite — только на главной. Разметка описывает САЙТ целиком, а не
+   документ, поэтому повторять её на каждой из 143 страниц бессмысленно; Google
+   прямо ждёт её ровно на одном URL (критерий sd-website-homepage).
+   SearchAction/potentialAction не добавляем: sitelinks searchbox отключён
+   21.11.2024, разметка мёртвая. */
+const isHome = path === '/';
+const canonical = SITE + path;
+
+/* Волна 123. Указатель текущей страницы в навигации. Считается ровно здесь,
+   из уже приходящего в макет path, — поэтому ни одна из 144 страниц не
+   правилась. undefined в Astro не печатает атрибут вовсе, так что на
+   неактивных ссылках разметка остаётся прежней байт-в-байт.
+   Раздел (а не только точное совпадение): находясь на статье справочника,
+   человек должен видеть подсветку на пункте «Справочник». */
+const cur = (href: string) =>
+  path === href || (href !== '/' && path.startsWith(href)) ? 'page' : undefined;
+---
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  <link rel="canonical" href={canonical} />
+  {/* Волна 38: favicon.svg — бруталистский силуэт стрелы+крюка, тот же язык, что
+      у иллюстраций парка. SVG-фавиконка работает во всех современных браузерах
+      без зависимости от загрузки веб-шрифта (важно — фавиконки рендерятся раньше
+      основного CSS страницы). До этой волны фавиконки не было вовсе. */}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  {/* Волна 39 — шрифты сняты со стороннего origin и лежат в /fonts/ (см.
+      public/fonts/fonts.css: там же разобрано, почему заголовочная гарнитура
+      заменена). Preload — только два кириллических субсета: на русском сайте
+      они нужны на каждой странице и лежат в критическом пути первого текста
+      (Russo One 4,4 КБ + Inter 18,3 КБ). Латинские субсеты гейтит
+      unicode-range, преложить их значило бы качать 133 КБ впустую. */}
+  <link rel="preload" href="/fonts/russo-one-cyrillic-400-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="preload" href="/fonts/inter-cyrillic-normal.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/fonts/fonts.css" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonical} />
+  <meta property="og:site_name" content={BRAND} />
+  <meta property="og:locale" content="ru_RU" />
+  {/* Волна 38: og:image/twitter:image — SVG-карточка в дизайн-коде сайта, до этой
+      волны их не было вовсе (превью при шаринге были пустыми). SVG, не PNG: в
+      этой сессии нет инструмента растровой генерации изображений — честно
+      зафиксировано в deploy-plan.md как известное ограничение (поддержка SVG
+      у соцплощадок неровная, Telegram обычно рендерит, VK/WhatsApp — не гарантированно). */}
+  <meta property="og:image" content={SITE + '/og-image.svg'} />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={SITE + '/og-image.svg'} />
+  <script type="application/ld+json" set:html={JSON.stringify(ldBusiness)} />
+  {isHome && <script type="application/ld+json" set:html={JSON.stringify(ldWebsite)} />}
+  {ldExtra.map((obj) => <script type="application/ld+json" set:html={JSON.stringify(obj)} />)}
+  <style is:global>
+    :root {
+      /* Волна 123 / color-scheme. До этой волны не был объявлен вовсе, и браузер
+         считал страницу светлой: нативные выпадающие списки (<select> в форме
+         заявки, в расчёте стоимости и в фильтрах), полосы прокрутки, чекбоксы и
+         поле type="search" рисовались СВЕТЛОЙ темой поверх чёрного сайта. Это
+         видно только глазами: ни один линтер такое не ловит, потому что в
+         разметке всё правильно. dark переводит все браузерные поверхности на
+         тёмную отрисовку и одновременно даёт корректный цвет автозаполнения. */
+      color-scheme: dark;
+
+      --bg: #0D0D0D;
+      --bg-2: #171717;
+      --yellow: #FFD600;
+      --ink: #F5F5F0;
+      --muted: #9B9994;
+      --line: rgba(245, 245, 240, .16);
+      /* Волна 12 / a11y: --line (1.60:1 против --bg-2) годится как декоративный разделитель
+         панелей, но НЕ как граница интерактивного контрола — WCAG 1.4.11 требует 3:1.
+         --line-strong даёт 3.83:1 на --bg-2 и 4.15:1 на --bg, тот же оттенок, тот же язык. */
+      --line-strong: rgba(245, 245, 240, .42);
+      --maxw: 1180px;
+      --pad: clamp(18px, 5vw, 60px);
+      /* Волна 39. Было 'Archivo Black' — гарнитура без кириллицы вообще, все
+         русские заголовки шли системным запасным (замер и разбор — в
+         public/fonts/fonts.css). Russo One: тот же индустриальный характер,
+         полная кириллица, единственное начертание 400. Запасные подобраны
+         по МЕТРИКАМ, а не по алфавиту: пока идёт swap, подмена не должна
+         дёргать вёрстку. У Russo One cap-height .700 em и большая ширина
+         знака; из системных ближе всего 'Arial Black' (cap .716, такая же
+         широкая и такая же тяжёлая по цвету), поэтому он стоит первым
+         запасным, а не условный Impact — тот вдвое уже и заголовки при
+         подмене схлопывались бы по ширине. */
+      --display: 'Russo One', 'Arial Black', Arial, sans-serif;
+      --sans: 'Inter', -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+
+      /* ─── Волна 123. ЛЕСТНИЦА КЕГЛЕЙ ────────────────────────────────────
+         Замер до правки (главная, 1280 px): 20 различных кеглей, из них
+         ПЯТНАДЦАТЬ в полосе 11,84–16,8 px с шагом 1–3 % (11.84 12.16 12.48
+         12.8 13.12 13.44 13.6 13.76 14.08 14.4 14.72 14.88 15.2 16 16.8).
+         Такой шаг человек не различает: вместо иерархии получается шум, и
+         каждая страница выглядит собранной из кусков. Причина накопительная —
+         каждый новый блок писал свой кегль «на глаз», а правило копировалось
+         в соседний файл и там расходилось (только один инлайновый размер
+         заголовка статьи существует в 52 копиях).
+         Здесь полоса мелкого текста сведена к трём ступеням (12 / 13 / 14),
+         каждая следующая крупнее предыдущей на 8 %, то есть различима.
+         Ни одно значение не сдвигается больше чем на 1,2 px — перевёрстки
+         не происходит, исчезает только дребезг. */
+      --t-xs:    .75rem;      /* 12 — подписи столбцов, метки, микротекст   */
+      --t-sm:    .8125rem;    /* 13 — сноски, примечания, хлебные крошки    */
+      --t-md:    .875rem;     /* 14 — вторичный текст, подписи под блоками  */
+      --t-base:  1rem;        /* 16 — основной текст                        */
+      --t-lead:  1.125rem;    /* 18 — лид, заголовки карточек               */
+      --t-h3:    1.1875rem;   /* 19                                          */
+      --t-h2:    clamp(1.35rem, 2.3vw, 1.75rem);   /* 21,6 → 28             */
+      --t-h1:    clamp(1.8rem, 3.7vw, 2.4rem);     /* 28,8 → 38,4           */
+      --t-display: clamp(2.2rem, 5.4vw, 3.4rem);   /* 35,2 → 54,4 — только h1 главной */
+      /* Цифра-факт — приём, а не подпись. До правки самое крупное число
+         сайта (27,2 px) было МЕЛЬЧЕ соседнего заголовка секции (h2 = 24 px
+         только на главной, 32 px на остальных): факт проигрывал служебному
+         тексту. Теперь число заведомо крупнее любого h2. */
+      --t-num:    clamp(1.9rem, 3.4vw, 2.4rem);    /* 30,4 → 38,4           */
+      /* Вариант для дат и длинных значений — не отдельный кегль «на глаз», а
+         ровно ступень --t-h2: девятая ступень лестницы там не нужна. */
+      --t-num-sm: var(--t-h2);
+
+      /* ─── РИТМ СЕКЦИЙ ───────────────────────────────────────────────────
+         Замер до правки: шесть секций главной подряд на ОДНОМ фоне с
+         отступами 40/40, 40/40, 40/40, 52/52, 56/56 — то есть страница
+         читалась как один непрерывный столбец без крупной формы. Три
+         ступени вместо одной дают иерархию без единой лишней линии. */
+      --sp-sm: clamp(26px, 3.4vw, 40px);
+      --sp-md: clamp(40px, 5vw, 68px);
+      --sp-lg: clamp(56px, 7.4vw, 104px);
+
+      /* ─── СОБСТВЕННЫЙ ГРАФИЧЕСКИЙ МОТИВ ─────────────────────────────────
+         design-code.md объявляет диагональную hazard-штриховку акцентным
+         паттерном сайта. Проверка перед правкой: во всём проекте она
+         встречалась в ОДНОМ файле (park/index.astro) и только как образец
+         цвета в легенде диаграммы — то есть заявленный мотив на 143 из 144
+         страниц не появлялся, и в первый экран не попадал вовсе.
+         Ниже — тот же приём как токен: угол 135°, шаг 10 px, чёрный из
+         --bg. Используется на границе шапки, на верхней кромке панелей и
+         как метка у надзаголовков. --hazard-fine — половинный шаг для
+         мелких элементов (метка eyebrow), чтобы полосы не сливались. */
+      --hazard: repeating-linear-gradient(135deg, var(--yellow) 0 10px, #0D0D0D 10px 20px);
+      --hazard-fine: repeating-linear-gradient(135deg, var(--yellow) 0 5px, #0D0D0D 5px 10px);
+      /* Сегментная маркировочная кромка: тот же язык «предупреждающей
+         разметки», но приведённый к вертикальной грани в 3 px, где
+         диагональ физически не читается. */
+      --hazard-edge: repeating-linear-gradient(180deg, var(--yellow) 0 11px, rgba(255,214,0,0) 11px 18px);
+    }
+    * { box-sizing: border-box; }
+    /* Волна 12 / a11y (WCAG 4.1.2): UA-правило [hidden]{display:none} принадлежит origin'у
+       user-agent и проигрывает ЛЮБОМУ авторскому display. У нас .calc__step и .quiz__step
+       объявлены display:grid — из-за этого атрибут hidden на шагах визарда не работал
+       вообще (шаг 2 калькулятора и шаг 2 квиза были видны всегда, при том что в DOM
+       стояло hidden). Явный авторский reset возвращает атрибуту его смысл. */
+    [hidden] { display: none !important; }
+    /* Волна 39. Фото парка переведены на <picture> с WebP-источником, и это
+       вставляет ЛИШНИЙ элемент между контейнером и <img>. По умолчанию picture
+       — inline-бокс, из-за чего правила вида `.park-card__photo img { height:
+       100% }` перестали бы работать: процент высоты резолвится относительно
+       родителя, а у inline-picture своей высоты нет. display:contents убирает
+       бокс picture из раскладки целиком — img снова становится прямым потомком
+       для CSS, и ни одно из уже написанных правил трогать не нужно. У элемента
+       нет собственной семантики, поэтому для доступности это безопасно (в
+       отличие от display:contents на таблицах и списках).
+       Запасной вариант — на случай браузера без поддержки: тогда picture
+       ведёт себя как блок и тянется на весь контейнер, что даёт ту же
+       геометрию, только без схлопывания бокса. */
+    picture { display: contents; }
+    @supports not (display: contents) {
+      picture { display: block; width: 100%; height: 100%; }
+    }
+    html, body { margin: 0; }
+    body { background: var(--bg); color: var(--ink); font-family: var(--sans); line-height: 1.6; }
+    .wrap { max-width: var(--maxw); margin: 0 auto; padding-inline: var(--pad); }
+    a { color: inherit; }
+
+    /* ─── Волна 123. БРАУЗЕРНЫЕ ПОВЕРХНОСТИ ────────────────────────────────
+       Выделение текста, каретка и полоса прокрутки — это те части страницы,
+       которые сайт НЕ рисовал: они приезжали из настроек браузера (синее
+       выделение, синяя каретка, серый скроллбар) и не принадлежали ни
+       чёрно-жёлтому языку сайта, ни какому-либо другому. Ни один линтер
+       этого не проверяет, но именно по ним отличается собранная страница
+       от сверстанной. */
+    ::selection { background: var(--yellow); color: var(--bg); }
+    input, textarea, select, [contenteditable] { caret-color: var(--yellow); }
+    /* Тонкая полоса с приглушённо-жёлтым ползунком: тот же тон, но не
+       сигнальная яркость — иначе на длинной странице справочника скроллбар
+       спорил бы с самим контентом. */
+    html { scrollbar-color: #7A6700 var(--bg-2); scrollbar-width: thin; }
+    /* Табличные цифры там, где числа стоят в столбец или пересчитываются
+       на глазах у пользователя (расчёт стоимости, ставки, характеристики):
+       иначе разряды «пляшут» при каждом пересчёте. Inter это умеет без
+       подключения отдельного моноширинного шрифта — ровно как обещано в
+       design-code.md, где это было заявлено, но нигде не включено. */
+    .num, .pricebar__out b, .rate-line__value, .lookup__stat b, .model-price__value {
+      font-variant-numeric: tabular-nums;
+      font-feature-settings: 'tnum' 1;
+    }
+    /* Волна 39 / интерлиньяж под метрики Russo One. Было line-height: 1.1 —
+       подобрано под гарнитуру, которая на кириллице никогда и не отрисовывалась.
+       Замер (canvas, 48 px, «НАЙДИТЕ НОРМУ ЩУД ЦЕНА»):
+         · собственный строчный бокс Russo One — 1,19 em (ascent .926 + descent .279);
+         · чернильная высота прописной кириллической строки — 51 px из 48, то есть
+           1,06 em: у Щ, Д и Ц есть выносные элементы ВНИЗ, чего у латиницы нет.
+       При 1,1 просвет между двумя строками заголовка оставался 1,9 px на кегле
+       50 px — хвосты Щ/Д/Ц практически касались верха следующей строки, а
+       полулидинг уходил в минус (строчный бокс уже самой гарнитуры).
+       1,16 em даёт 4,8 px просвета — строки перестают слипаться, но набор
+       остаётся плотнее, чем гарнитура просит по умолчанию, то есть
+       бруталистский ритм заголовков сохранён. */
+    /* Волна 39 / перенос длинных слов в заголовке. У h1 нигде не задан кегль —
+       работает браузерный 2em, то есть 32 px и на десктопе, и на телефоне. На
+       экране 375 px колонка заголовка 336 px, а прописное «АСФАЛЬТИРОВАННОГО»
+       в Russo One занимает 384 px: страница уезжала в горизонтальную прокрутку.
+       Дефект не новый — с прежним системным запасным шрифтом те же две страницы
+       вылезали на 14 и 6 px, просто в пределах погрешности; более широкая
+       гарнитура сделала его заметным (29 и 20 px).
+       break-word срабатывает ТОЛЬКО когда слово не помещается в строку целиком:
+       прогон по всем 143 страницам показал ровно один изменившийся заголовок из
+       нескольких сотен, а горизонтальная прокрутка исчезла везде. hyphens:auto
+       добавлен сверху — при html lang="ru" браузер ставит настоящий перенос со
+       знаком дефиса вместо рубленого разрыва; замер показал, что на разбивку
+       строк он больше нигде не влияет, то есть цена нулевая. */
+    h1, h2, h3 { margin: 0; font-family: var(--display); font-weight: 400; text-transform: uppercase; line-height: 1.16; overflow-wrap: break-word; hyphens: auto; }
+    /* Волна 124 / отмена переносов в КРУПНЫХ заголовках. Замер волны 39 был
+       верен, но смотрел на разбивку строк, а не на то, как она читается.
+       На телефоне 375 px главная получала «НАЙДИТЕ НОРМУ, А ПО-/ТОМ УЖЕ КРАН»,
+       /park/ — «КОТОРУЮ МЫ ПОД-/БИРАЕМ ПОД ЗАДАЧУ». Заголовки набраны
+       прописными в Russo One: дефис посреди слова на капслоке читается не как
+       типографский перенос, а как опечатка — первое, что человек видит в руке.
+       У h3 переносы остаются: это 19 px в узких колонках карточек, там дефис
+       не бросается в глаза, а запас против переполнения нужнее.
+       overflow-wrap: break-word выше НЕ трогаем — именно он, а не hyphens,
+       спасал «АСФАЛЬТИРОВАННОГО» от горизонтальной прокрутки; проверено на
+       320/360/375 после правки: scrollWidth == clientWidth на всех трёх. */
+    h1, h2 { hyphens: manual; }
+    /* Волна 124 / надзаголовок под липкой шапкой. Шапка .nav — sticky, 78 px.
+       scroll-padding-top у html не задавался вовсе, поэтому переход по любому
+       якорю (буквы указателя, #zayavka, заголовки внутри статьи) ставил цель
+       ровно под нижнюю кромку шапки, и первая строка исчезала. 94 = 78 шапки
+       + 16 воздуха. Здесь ОДИН источник на весь сайт: поштучные
+       scroll-margin-top у .idx__group, .sv и заголовков SpravochnikLayout
+       обнулены — иначе отступы складывались бы и цель уезжала на ~190 px. */
+    html { scroll-padding-top: 94px; }
+    /* Волна 123. Кегли заголовков раньше не задавались вовсе — работал
+       браузерный 2em/1.5em/1.17em, то есть 32/24/18,7 px одинаково и на
+       телефоне, и на широком экране, а часть страниц перебивала это своим
+       инлайновым clamp'ом. Теперь один источник на весь сайт. На 320 px
+       h1 становится 28,8 px вместо 32 — то есть заголовки на узком экране
+       не выросли, а уменьшились: запас против переполнения только вырос. */
+    h1 { font-size: var(--t-h1); }
+    h2 { font-size: var(--t-h2); }
+    h3 { font-size: var(--t-h3); }
+    /* Висячие слова в заголовке: строки выравниваются по длине, последняя
+       строка перестаёт быть одиноким словом. Ограничение браузера — до
+       шести строк, то есть цена нулевая. */
+    h1, h2, h3 { text-wrap: balance; }
+    p { margin: 0; }
+    .prose { max-width: 74ch; }
+    .prose p + p, .prose h3 + p, .prose ul + p, .prose p + ul { margin-top: 18px; }
+    /* Волна 123. Было 18 px и перед заголовком, и после него — то есть
+       подзаголовок висел ровно посередине между двумя абзацами и не
+       принадлежал ни одному. Заголовок относится к тому, что идёт ЗА ним,
+       поэтому сверху воздуха должно быть заметно больше: 32 против 18. */
+    .prose p + h3, .prose ul + h3 { margin-top: 32px; }
+    .prose ul { margin: 0; padding-left: 22px; }
+    .prose li + li { margin-top: 8px; }
+
+    .nav { position: sticky; top: 0; z-index: 20; background: rgba(13,13,13,.94); backdrop-filter: blur(6px); border-bottom: 4px solid var(--yellow); }
+    /* Волна 123. Нижняя кромка шапки — самые заметные 4 px сайта, и до этой
+       волны это была ровно та же сплошная жёлтая полоса, что у остальных
+       восьми сайтов сети. Теперь по ней идёт hazard-штриховка: собственный
+       мотив сайта появляется в первом экране КАЖДОЙ страницы, а не только
+       в легенде одной диаграммы. Полоса рисуется псевдоэлементом поверх
+       существующего бордера (bottom:-4px, height:4px) — геометрия шапки и
+       расчёт scroll-margin-top (96px) не меняются ни на пиксель, а без
+       поддержки градиента остаётся прежняя сплошная жёлтая линия. */
+    .nav::after {
+      content: '';
+      position: absolute;
+      left: 0; right: 0; bottom: -4px;
+      height: 4px;
+      background: var(--hazard);
+      pointer-events: none;
+    }
+    .nav__row { display: flex; justify-content: space-between; align-items: center; height: 74px; max-width: var(--maxw); margin: 0 auto; padding-inline: var(--pad); }
+    .brand { font-family: var(--display); font-size: var(--t-lead); text-decoration: none; }
+    .brand span { color: var(--yellow); }
+    .nav__links { display: flex; gap: 22px; font-size: var(--t-md); font-weight: 600; }
+    .nav__links a { text-decoration: none; padding-block: 4px; border-bottom: 2px solid transparent; }
+    .nav__links a:hover { color: var(--yellow); }
+    /* Указатель текущей страницы. До этой волны его не было ни в шапке, ни
+       в мобильном меню: находясь в справочнике, посетитель не видел в
+       навигации, где он. aria-current проставляется в разметке из
+       единственного места (сравнение path в BaseLayout), поэтому 144
+       страницы править не пришлось. */
+    .nav__links a[aria-current="page"] { color: var(--yellow); border-bottom-color: var(--yellow); }
+    .nav__mobile-panel a[aria-current="page"] { color: var(--yellow); background: var(--bg); box-shadow: inset 3px 0 0 0 var(--yellow); }
+
+    .section { padding-block: var(--sp-md); }
+    .section-head { max-width: 780px; margin-bottom: clamp(28px,4vw,44px); }
+
+    /* ─── Волна 123. НАДЗАГОЛОВОК → ТРАФАРЕТНАЯ МЕТКА ──────────────────────
+       Было: жёлтый Inter 700, .78rem, трекинг .08em, верхний регистр — то
+       есть ровно тот «eyebrow», который стоит над каждым заголовком на
+       любом сгенерированном лендинге и одинаково выглядит на всех девяти
+       сайтах сети. Сам элемент удалить нельзя: SpravochnikLayout читает его
+       текст из исходников статей, чтобы собрать блок «Рядом в справочнике»
+       (46 страниц), и на 144 страницах это осмысленная рубрика, а не
+       украшение. Поэтому меняется не наличие, а МАТЕРИАЛ: заголовочная
+       гарнитура вместо текстовой, кегль из лестницы, и слева — короткая
+       полоса hazard-штриховки, то есть собственный мотив сайта, а не
+       межбуквенный интервал. Тот же текст, другая порода.
+       flex-wrap нужен: несколько рубрик длиннее 30 знаков («География:
+       Центральный округ»), на 320 px они должны переноситься, а не
+       выдавливать метку за край. */
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px 10px;
+      color: var(--yellow);
+      font-family: var(--display);
+      font-weight: 400;
+      font-size: var(--t-xs);
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      line-height: 1.4;
+    }
+    .eyebrow::before {
+      content: '';
+      flex: none;
+      width: 26px;
+      height: 9px;
+      background: var(--hazard-fine);
+    }
+    .section-head h2 { font-size: var(--t-h2); margin-top: 12px; }
+    .section-head p { margin-top: 14px; color: var(--muted); font-size: var(--t-base); max-width: 64ch; }
+
+    /* Кнопка. Добавлено состояние нажатия: до этой волны на всём сайте не
+       было ни одного правила :active — курсор нажимал, а страница никак не
+       отвечала до самой перезагрузки. Смещение на 2 px вниз плюс уход
+       жёсткой тени читается как физическое вдавливание и стоит ноль
+       килобайт. */
+    .btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      background: var(--yellow); color: var(--bg);
+      font-weight: 700; padding: 14px 24px; border: none; cursor: pointer;
+      font-family: var(--sans); font-size: var(--t-base);
+      box-shadow: 0 0 0 0 rgba(255,214,0,0);
+      transition: background-color 160ms ease, transform 110ms ease, box-shadow 160ms ease;
+    }
+    /* Тень жёсткая и без размытия — это не мягкая корпоративная карточка, а
+       тот же приём, что уже работает на карточках парка и кейсов (8px/10px).
+       В покое тени нет: она появляется под курсором и схлопывается при
+       нажатии, то есть работает как отклик, а не как украшение. */
+    .btn:hover { background: #fff; box-shadow: 5px 5px 0 0 var(--yellow); }
+    .btn:active { transform: translate(3px, 3px); box-shadow: 2px 2px 0 0 var(--yellow); }
+    @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+
+    /* ═══ Волна 123. FAQ-АККОРДЕОН — ОДНО ПРАВИЛО НА ВЕСЬ САЙТ ═════════════
+       Разбор перед правкой. Разметка <details class="faq__item"> стоит на 67
+       страницах. CSS для неё был:
+         · полный, с маркером «+» и скрытым нативным треугольником — на ОДНОЙ
+           странице (/faq/);
+         · урезанная копия без маркера — ещё в 15 файлах;
+         · НИКАКОГО — на оставшихся 52, включая все 45 статей справочника.
+       То есть на большей части сайта фирменный аккордеон выглядел как голый
+       системный треугольник операционной системы, а на одной странице — как
+       спроектированный элемент. Это ровно тот случай, когда правило скопировали
+       по файлам и копии разошлись: заметить это по одной странице нельзя, а по
+       сайту видно сразу.
+       Здесь оно становится одним глобальным правилом, а все локальные копии
+       удалены (иначе скоупленный селектор Astro весит больше глобального и
+       продолжал бы побеждать). Маркер оставлен прежний, проверенный на /faq/:
+       плюс на заголовочной гарнитуре, поворот на 45° в крестик при раскрытии.
+       Отдельный глиф «минус» не вводится намеренно — у Russo One одно
+       начертание, и добавлять зависимость от покрытия ещё одного знака
+       незачем, когда поворот даёт тот же смысл поворотом уже имеющегося. */
+    .faq__item { border-bottom: 1px solid var(--line); }
+    .faq__item > summary {
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      /* Вопрос — основной тап-таргет страницы FAQ (WCAG 2.5.8). */
+      min-height: 44px;
+      padding-block: 14px;
+      font-weight: 600;
+      transition: color 160ms ease;
+    }
+    .faq__item > summary::-webkit-details-marker { display: none; }
+    .faq__item > summary:hover { color: var(--yellow); }
+    .faq__item[open] > summary { color: var(--yellow); }
+    .faq__item > summary::after {
+      content: '+';
+      flex: none;
+      font-family: var(--display);
+      /* Волна 39: 900 → 400. У Russo One одно начертание; 900 включал
+         синтетический жир, и «плюс» получался размазанным, а не плотным. */
+      font-weight: 400;
+      font-size: var(--t-h2);
+      color: var(--yellow);
+      line-height: 1;
+      transition: transform 180ms cubic-bezier(0.22,1,0.36,1);
+    }
+    .faq__item[open] > summary::after { transform: rotate(45deg); }
+    /* Ответ отбивается тем же отступом 34px, что и заголовки разделов в
+       статьях справочника, и получает маркировочную кромку — ту же, что у
+       врезок по всему сайту. Раскрытый вопрос читается как одна деталь, а
+       не как две строки подряд. */
+    .faq__item > p {
+      position: relative;
+      margin-top: 2px;
+      padding: 0 0 20px 34px;
+      color: var(--muted);
+      font-size: var(--t-md);
+      max-width: 78ch;
+    }
+    .faq__item[open] > p::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 3px; bottom: 22px;
+      width: 3px;
+      background: var(--hazard-edge);
+    }
+    /* На узком экране 34px отступа — это 12 % колонки; ответ важнее отбивки. */
+    @media (max-width: 560px) {
+      .faq__item > p { padding-left: 16px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .faq__item > summary, .faq__item > summary::after { transition: none; }
+    }
+
+    .crumbs { font-size: var(--t-sm); color: var(--muted); padding-block: 18px; display: flex; gap: 6px; flex-wrap: wrap; }
+    .crumbs a { text-decoration: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .crumbs a:hover { color: var(--yellow); text-decoration: underline; text-underline-offset: 3px; }
+    /* Последняя крошка — это и есть текущая страница; до правки она была
+       неотличима от ссылок рядом. */
+    .crumbs > span:last-child, .crumbs [aria-current="page"] { color: var(--ink); font-weight: 600; }
+
+    .skip-link { position: absolute; left: -9999px; top: 0; z-index: 100; background: var(--yellow); color: var(--bg); padding: 12px 20px; font-weight: 700; text-decoration: none; }
+    .skip-link:focus { left: 8px; top: 8px; }
+
+    .footer { border-top: 4px solid var(--yellow); padding-block: 30px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; color: var(--muted); font-size: var(--t-md); }
+
+    /* --- Волна 12: мобильная навигация. Десктопная шапка скрывается <=760px, но раньше
+       ничем не заменялась — половина сайта была недостижима с телефона. <details> даёт
+       рабочее раскрытие и клавиатуру без единой строки JS. Стиль — дизайн-код сайта:
+       нулевые радиусы, жёсткие границы, Archivo Black, жёлтый акцент. --- */
+    .nav__mobile { display: none; position: relative; }
+    .nav__mobile-btn {
+      list-style: none;
+      cursor: pointer;
+      font-family: var(--display);
+      font-size: var(--t-sm);
+      text-transform: uppercase;
+      color: var(--bg);
+      background: var(--yellow);
+      /* 44px тап-таргет по WCAG 2.5.8 */
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+      padding: 0 18px;
+    }
+    .nav__mobile-btn::-webkit-details-marker { display: none; }
+    .nav__mobile[open] .nav__mobile-btn { background: #fff; }
+    .nav__mobile-panel {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 6px);
+      min-width: 232px;
+      display: flex;
+      flex-direction: column;
+      background: var(--bg-2);
+      border: 3px solid var(--yellow);
+      z-index: 30;
+    }
+    .nav__mobile-panel a {
+      padding: 13px 18px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: var(--t-md);
+      border-bottom: 1px solid var(--line);
+      min-height: 44px;
+      display: flex;
+      align-items: center;
+    }
+    .nav__mobile-panel a:last-child { border-bottom: none; color: var(--yellow); }
+    .nav__mobile-panel a:hover { background: var(--bg); color: var(--yellow); }
+    @media (max-width: 760px) {
+      .nav__links { display: none; }
+      .nav__mobile { display: block; }
+    }
+
+    /* --- Focus-visible: hard-edge ring everywhere, brutalist (no blur), keyboard nav gets it, mouse clicks don't --- */
+    a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+    summary:focus-visible, [tabindex]:focus-visible {
+      outline: 3px solid var(--yellow);
+      outline-offset: 3px;
+    }
+    .park-card:focus-visible, .keysy-card:focus-visible,
+    .post-card:focus-visible, .okrug-links a:focus-visible {
+      outline: 3px solid var(--yellow);
+      outline-offset: -3px;
+      z-index: 2;
+    }
+
+    /* ─── Волна 123. СОСТОЯНИЕ НАЖАТИЯ ────────────────────────────────────
+       Проверка перед правкой: во всех 154 исходниках сайта не было НИ
+       ОДНОГО правила :active. Наведение отрабатывало, фокус отрабатывал, а
+       собственно нажатие — единственный момент, когда человек ждёт ответа
+       немедленно, — не давало ничего. Карточка при нажатии садится на своё
+       место (тень схлопывается), ссылка уходит на пиксель вниз. */
+    a.park-card:active, a.keysy-card:active, a.post-card:active, .okrug-links a:active {
+      transform: translate(0, 0);
+      box-shadow: 2px 2px 0 0 var(--yellow);
+      transition-duration: 60ms;
+    }
+    .nav__links a:active, .nav__mobile-panel a:active, .crumbs a:active,
+    .idx__letters a:active, .footer nav a:active { transform: translateY(1px); }
+    .nav__mobile-btn:active { transform: translateY(2px); }
+    .mcta__btn:active { transform: translateY(2px); }
+    @media (prefers-reduced-motion: reduce) {
+      a.park-card:active, a.keysy-card:active, a.post-card:active, .okrug-links a:active,
+      .nav__links a:active, .nav__mobile-panel a:active, .crumbs a:active,
+      .idx__letters a:active, .footer nav a:active, .nav__mobile-btn:active,
+      .mcta__btn:active { transform: none; }
+    }
+
+    /* ─── ОШИБКА ПОЛЯ ФОРМЫ ────────────────────────────────────────────────
+       Тоже отсутствовала полностью: незаполненный обязательный телефон
+       выглядел ровно как заполненный, и человек узнавал о проблеме только
+       из системного пузыря браузера. :user-invalid (в отличие от :invalid)
+       срабатывает лишь ПОСЛЕ того, как поле трогали или форму отправляли,
+       поэтому пустая форма при загрузке не краснеет. Красного на сайте нет
+       и не появляется: ошибка отмечается той же сигнальной штриховкой, что
+       и остальные предупреждения.
+       Селектор намеренно длиннее необходимого (:not(...)): скоупленное
+       правило страницы `.order-form input` получает от Astro атрибут и
+       весит столько же, сколько короткая запись, — при равном весе исход
+       решал бы порядок бандла, а он не гарантирован. */
+    .order-form input:user-invalid:not([type="checkbox"]),
+    .order-form select:user-invalid:not([type="checkbox"]) {
+      border-color: var(--yellow);
+      box-shadow: inset 3px 0 0 0 var(--yellow), inset 0 0 0 1px var(--yellow);
+    }
+    .order-form input[type="checkbox"]:user-invalid {
+      outline: 2px solid var(--yellow);
+      outline-offset: 2px;
+    }
+
+    /* --- Card polish: brutalist hard-shadow hover, deepened for Волна 10 — still zero-radius/no-blur, only the network's other (corporate) sites use soft shadows --- */
+    .park-card, .keysy-card, .post-card, .okrug-links a {
+      transition: transform 220ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms cubic-bezier(0.22,1,0.36,1);
+      position: relative;
+    }
+
+    /* ─── Волна 123. УГЛОВАЯ РЕГИСТРАЦИОННАЯ МЕТКА НА КАРТОЧКАХ ────────────
+       Отзыв владельца: «карточка = рамка 1px, одинаковая четырьмя сетками
+       подряд». Так и было: .park-card, .keysy-card, .post-card, .sv-obj__card
+       и карточки «Рядом в справочнике» — все пять описаны одинаково
+       (1px var(--line-strong) на плашке var(--bg-2)), и отличить одну сетку
+       от другой было нечем.
+       Приём взят НЕ со стороны: угловые метки чертежа уже нарисованы в
+       ключевой иллюстрации первого экрана главной (path d="M10 30 V10 H30"
+       и три её зеркальных копии) — это собственный знак сайта, просто он
+       жил в одном SVG и никуда не распространялся. Здесь тот же угол
+       выносится на карточки как класс объекта: плашка с рамкой — это
+       «панель», плашка с hazard-полосой сверху — «щиток», плашка с угловой
+       меткой — «карточка». Три разных предмета вместо пяти одинаковых.
+       Рисуется двумя фоновыми слоями одного псевдоэлемента, без единого
+       лишнего узла в разметке. */
+    .park-card::before, .keysy-card::before, .post-card::before, .sv-obj__card::before {
+      content: '';
+      position: absolute;
+      left: -1px; top: -1px;
+      width: 18px; height: 18px;
+      z-index: 2;
+      pointer-events: none;
+      background:
+        linear-gradient(var(--yellow), var(--yellow)) left top / 18px 3px no-repeat,
+        linear-gradient(var(--yellow), var(--yellow)) left top / 3px 18px no-repeat;
+    }
+    /* Метка НЕ анимируется при наведении намеренно. У карточки уже три
+       отклика на курсор (подъём, жёсткая тень, световое пятно внутри), и
+       четвёртый читался бы как суета. Плюс раскрытие метки пришлось бы
+       гнать через width/height, то есть через пересчёт раскладки, — на
+       сетке из тринадцати карточек это лишняя работа ради ничего. */
+    .sv-obj__card { position: relative; }
+    /* --- Волна 13-D: 3D-наклон карточек-ссылок -----------------------------
+       Трансформ собран из частей: подъём (translate3d) задаёт CSS, поворот
+       (--rx/--ry) пишет скрипт наклона по позиции курсора. Переменные по
+       умолчанию НЕ определены, поэтому var(--rx, 0deg) вырождает всю запись
+       ровно в прежний бруталистский подъём Волны 10 — без JS, на тач-экранах
+       и при reduced-motion карточка ведёт себя в точности как раньше.
+       perspective указан на самой карточке: точка схода в её центре, наклон
+       не «разъезжается» по сетке, как было бы с общим perspective на гриде. */
+    a.park-card:hover, a.keysy-card:hover, a.post-card:hover {
+      transform: perspective(900px) translate3d(-4px, -6px, 0) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      box-shadow: 8px 10px 0 0 var(--yellow);
+      z-index: 1;
+      /* Собственный тайминг наведения. Изначально это правило появилось,
+         чтобы перебить transition 480ms от [data-reveal]; в волне 123 та
+         система удалена как неиспользуемая, но 120ms остаются осознанным
+         значением, а не наследством: наклон обязан идти ЗА курсором, и на
+         220ms он читается как задержка, а не как отклик. */
+      transition: transform 120ms cubic-bezier(0.22,1,0.36,1), box-shadow 220ms cubic-bezier(0.22,1,0.36,1);
+    }
+    /* Списки округов наклон не получают: это мелкие плитки в плотной сетке,
+       там наклон читался бы как дребезг, а не как объём. */
+    .okrug-links a:hover {
+      transform: translate(-4px, -6px);
+      box-shadow: 8px 10px 0 0 var(--yellow);
+      z-index: 1;
+    }
+
+    /* Подсветка активной карточки. Это НЕ мягкая корпоративная тень: края
+       карточки, нулевые радиусы и жёсткая офсетная тень не тронуты — светится
+       пятно света ВНУТРИ карточки, сделанное фоновым радиальным градиентом
+       (не box-shadow с блюром). Центр пятна едет за курсором через --gx/--gy;
+       без скрипта пятно стоит сверху по центру и «прожектор» всё равно есть. */
+    a.park-card::after, a.keysy-card::after, a.post-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 240ms cubic-bezier(0.22,1,0.36,1);
+      background: radial-gradient(220px 220px at var(--gx, 50%) var(--gy, 0%), rgba(255,214,0,.15), rgba(255,214,0,0) 62%);
+    }
+    a.park-card:hover::after, a.keysy-card:hover::after, a.post-card:hover::after,
+    a.park-card:focus-visible::after, a.keysy-card:focus-visible::after,
+    a.post-card:focus-visible::after { opacity: 1; }
+
+    /* «Прожектор» за блоком карточек: пятно света ПОЗАДИ сетки. Карточки
+       непрозрачные (--bg-2), поэтому наружу пробивается только ореол вокруг
+       блока — свет как от прожектора на площадке, а не «мягкая карточка».
+       Реализовано фоном на псевдоэлементе (никакого блюра, никаких радиусов). */
+    .glow-stage { position: relative; isolation: isolate; }
+    .glow-stage::before {
+      content: '';
+      position: absolute;
+      z-index: -1;
+      left: 50%;
+      top: 46%;
+      /* Ровно ширина секции и ни пикселем больше: при 116% пятно вылезало за
+         границы блока и на узких экранах могло создать горизонтальную прокрутку.
+         Карточки и так утоплены внутрь на padding-inline, поэтому ореол вокруг
+         сетки виден и при 100%. */
+      width: 100%;
+      max-width: 1180px;
+      height: 92%;
+      transform: translate(-50%, -50%);
+      background: radial-gradient(50% 50% at 50% 50%, rgba(255,214,0,.085), rgba(255,214,0,0) 72%);
+      pointer-events: none;
+    }
+    @media (max-width: 760px) { .glow-stage::before { opacity: .5; } }
+
+    @media (prefers-reduced-motion: reduce) {
+      .park-card, .keysy-card, .post-card, .okrug-links a { transition: none; }
+      a.park-card::after, a.keysy-card::after, a.post-card::after { transition: none; }
+      /* Скрипт наклона при reduce не навешивается вовсе; !important нужен на
+         случай, когда настройку включили уже ПОСЛЕ того, как инлайновые
+         --rx/--ry были записаны — иначе инлайн победил бы правило. */
+      a.park-card, a.keysy-card, a.post-card { --rx: 0deg !important; --ry: 0deg !important; }
+    }
+
+    /* --- Волна 123. Система scroll-reveal УДАЛЕНА ---------------------------
+       Проверка по собранной папке: атрибут data-reveal не стоит НИ НА ОДНОМ
+       элементе ни на одной из 144 страниц (grep 'data-reveal=' по dist —
+       ноль совпадений). При этом на каждую страницу уезжали: правило
+       opacity:0 + transform, блок @media для reduced-motion, отдельный
+       <noscript>-переопределитель и полтора килобайта контроллера с
+       IntersectionObserver и подпиской на смену настройки движения.
+       То есть сайт вёз механизм анимации появления, которому нечего было
+       показывать, — и при этом настоящего авторского момента не имел.
+       Механизм снят; один осмысленный момент вместо него — прокладка
+       маркировочной ленты по кромке главной панели, см. .lookup__panel
+       в pages/index.astro (чистый CSS, только transform, с гейтом
+       prefers-reduced-motion). --- */
+
+    /* --- Волна 12: мобильная закреплённая CTA-панель -------------------------
+       Две обычные ссылки — работает полностью без JS. JS только (а) уточняет
+       фактическую высоту панели для отступа снизу (важно при 200% зуме текста,
+       WCAG 1.4.4/1.4.12) и (б) убирает панель, когда форма заявки и так на экране.
+       Скрыта на десктопе (>760px) — там телефон и меню есть в шапке. */
+    .mcta { display: none; }
+
+    @media (max-width: 760px) {
+      :root {
+        /* border-top 4 + padding-top 10 + кнопка 52 = 66, плюс iOS safe-area снизу.
+           Тот же расчёт JS перезаписывает измеренным значением, если оно отличается. */
+        --mcta-space: calc(66px + max(12px, env(safe-area-inset-bottom)));
+      }
+      body { padding-bottom: var(--mcta-space); }
+      html { scroll-padding-bottom: var(--mcta-space); }
+
+      /* --- Волна 124 / кегль h1 на телефоне ---------------------------------
+         Обход всех 143 страниц на 375 px: у 79 заголовок занимает ЧЕТЫРЕ и
+         больше строк, у семи — шесть. «ОФОРМЛЕНИЕ ПРОПУСКА НА ОБЪЕКТ С
+         ПРОПУСКНЫМ РЕЖИМОМ — ЧТО НУЖНО» вставало шестью строками и съедало
+         200 px из 734, доступных до сгиба: первый экран такой страницы — это
+         заголовок и начало абзаца, больше ничего.
+         Причина не в длине заголовков (они выверены по смыслу и не
+         переписываются), а в том, что --t-h1 ниже 778 px стоит полкой 28,8 px
+         и не реагирует на ширину экрана вообще: ёмкость строки на 375 px —
+         около 17 знаков, и любая пара слов длиннее этого рвётся.
+         6,8vw держит ёмкость около 20 знаков: у того же заголовка шесть строк
+         превращаются в четыре. Верхняя граница 1,8rem = ровно прежние 28,8 px,
+         поэтому от 424 px и выше НИЧЕГО не меняется — правка живёт только на
+         узких экранах, ради которых написана. Кегли h2/h3 не тронуты. */
+      h1 { font-size: clamp(1.35rem, 6.8vw, 1.8rem); }
+
+      /* Волна 124 / заголовок таблицы схлопывался в столбик. Таблицы .adm и .zt
+         на телефоне разбираются в карточки: display:block вешается на table,
+         tbody, tr и td — но НЕ на caption. Caption остаётся table-caption внутри
+         блочного родителя, браузер строит вокруг него анонимную таблицу, и его
+         ширина считается по содержимому (shrink-to-fit), а не по колонке.
+         Итог на кадре: «КАРТОЧКА ДОПУСКА ТЕХНИКИ» стояло тремя короткими
+         строками в 40 % ширины и читалось как обрывок, а не как заголовок.
+         Одно правило здесь закрывает 24 страницы услуг (.adm) и все страницы
+         с компонентом ZoneTable (.zt). */
+      .adm caption, .zt caption { display: block; width: 100%; }
+
+      /* Волна 124 / горизонтальная прокрутка на 320 px. Обход всех 143 страниц:
+         на 375 px переполнения нет нигде, на 320 px его дают шесть страниц —
+         пять карточек моделей и «Работа крана зимой», от +7 до +16 px.
+         Виновник один и тот же на всех шести: table.ttx, таблица характеристик
+         в две колонки. Ширина 100 % и доли колонок (45 %/62 %) при
+         table-layout: auto — это лишь ПОЖЕЛАНИЕ: браузер всё равно не даёт
+         таблице стать уже своей min-content ширины, а самая длинная ячейка
+         («25 т (на минимальном вылете)», «50 лк, горизонтальная плоскость»)
+         на 320 px в отведённую долю не влезает — и таблица распирает страницу.
+         Схема крана рядом ни при чём: у .craneart свой overflow-x: auto,
+         она прокручивается внутри своей рамки и страницу не тянет.
+         Первым решением был table-layout: fixed + overflow-wrap на ячейках.
+         Прокрутка исчезла, но кадр показал новый дефект того же рода, что и
+         переносы в заголовках: колонка подписи на 320 px — 119 px, а
+         «Грузоподъёмность» в 14 px занимает 122, и ячейка рвала слово БЕЗ
+         дефиса — «Грузоподъёмн / ость».
+         Две колонки в этой таблице на телефоне не работают в принципе: на
+         320 px подпись и значение делят 280 px и обе встают в три строки, на
+         420 px «Назначение» разгоняется на пять строк рядом с однословной
+         подписью. Поэтому .ttx на телефоне разбирается в карточки — ровно тем
+         же приёмом и на том же пороге 760 px, что .adm и .zt на этом же сайте
+         (подпись сверху мелким прописным, значение под ней во всю ширину).
+         Это не приведение к общему стандарту, а уже принятый здесь способ
+         показывать таблицу на узком экране; .ttx была единственной таблицей
+         сайта, до которой он не дошёл.
+
+         Про !important. Таблица .ttx описана СВОИМ <style> в каждой из 17
+         страниц, а Astro скоупит такие стили настоящими селекторами по
+         атрибуту: «.ttx[data-astro-cid-…] td[data-astro-cid-…]:first-child».
+         Это заведомо специфичнее любого разумного глобального селектора, и
+         перебить width/border/padding отсюда иначе нельзя — только переписав
+         одно и то же в семнадцати файлах, где следующая страница модели снова
+         про это забудет. Здесь !important — единственная точка правки на все
+         семнадцать, а не затычка поверх спорного каскада. */
+      .ttx, .ttx tbody, .ttx tr, .ttx td { display: block !important; width: 100% !important; }
+      .ttx tr { border-bottom: 1px solid var(--line); padding: 10px 0; }
+      .ttx tr:last-child { border-bottom: none; }
+      .ttx td { border: none !important; padding: 0 !important; }
+      .ttx td:first-child {
+        font-size: var(--t-xs);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        margin-bottom: 3px;
+      }
+
+      .mcta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        position: fixed;
+        left: 0; right: 0; bottom: 0;
+        z-index: 60;
+        background: var(--bg);
+        border-top: 4px solid var(--yellow);
+        padding: 10px var(--pad) max(12px, env(safe-area-inset-bottom));
+        /* visibility намеренно НЕ в списке transition: она должна переключаться
+           мгновенно, чтобы панель ровно в тот же момент уходила из tab-порядка и
+           из дерева доступности. Плавность оставлена только косметике. */
+        transition: opacity 180ms ease, transform 180ms ease;
+      }
+      .mcta__btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 52px;
+        min-width: 44px;
+        padding-inline: 10px;
+        border: 2px solid var(--yellow);
+        font-family: var(--sans);
+        font-weight: 700;
+        /* Единственный кегль сайта, который остаётся текучим: подпись на
+           закреплённой мобильной кнопке обязана сжиматься на 320 px, иначе
+           «Заказать кран» не помещается в половину полосы. Границы взяты
+           из лестницы (13 → 16), а не назначены на глаз. */
+        font-size: clamp(var(--t-sm), 3.6vw, var(--t-base));
+        line-height: 1.1;
+        text-align: center;
+        text-decoration: none;
+        white-space: nowrap;
+      }
+      .mcta__btn--primary { background: var(--yellow); color: var(--bg); }
+      .mcta__btn--call { background: var(--bg); color: var(--yellow); }
+      .mcta__btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+      /* Жёлтая обводка по умолчанию не видна на жёлтой кнопке — на ней рисуем
+         чёрное кольцо внутрь (13.8:1), на «Позвонить» работает глобальное жёлтое. */
+      .mcta__btn--primary:focus-visible { outline: 3px solid var(--bg); outline-offset: -7px; }
+      /* Скрытие в зоне формы заявки: visibility убирает ссылки и из tab-порядка,
+         поэтому фокус никогда не уедет на невидимую кнопку. */
+      .mcta.is-hidden { opacity: 0; visibility: hidden; transform: translateY(100%); pointer-events: none; }
+    }
+    @media (max-width: 760px) and (prefers-reduced-motion: reduce) {
+      .mcta { transition: none; }
+    }
+
+  </style>
+</head>
+<body>
+  <a href="#main-content" class="skip-link">Перейти к основному содержимому</a>
+  <header class="nav">
+    <div class="nav__row">
+      <a class="brand" href="/">МОСКРАН<span>-СЕРВИС</span></a>
+      <nav class="nav__links" aria-label="Основная навигация">
+        <a href="/spravochnik/" aria-current={cur('/spravochnik/')}>Справочник</a>
+        <a href="/proverka-dokumentov/" aria-current={cur('/proverka-dokumentov/')}>Проверка документов</a>
+        <a href="tel:+79032690060">+7 (903) 269-00-60</a>
+      </nav>
+      {/* Волна 12 (сетевая сверка): .nav__links скрывался на <=760px БЕЗ замены — с телефона
+          были недостижимы /park/, /keysy/, /spravochnik/, /faq/, /documents/, /o-kompanii/, /contacts/
+          (WCAG 2.4.5). Тот же дефект найден и закрыт на 8 остальных сайтах сети; здесь его
+          пропустили. Нативный <details> — раскрытие и клавиатура работают БЕЗ JS.
+          Ссылки только на реально существующие страницы: у /geo/ и /uslugi/ нет index-страницы,
+          поэтому услуги — якорь на главную, как и в десктопной шапке. */}
+      <details class="nav__mobile">
+        <summary class="nav__mobile-btn">Меню</summary>
+        <nav class="nav__mobile-panel" aria-label="Мобильная навигация">
+          <a href="/spravochnik/" aria-current={cur('/spravochnik/')}>Справочник</a>
+          <a href="/#ukazatel">Указатель А–Я</a>
+          <a href="/proverka-dokumentov/" aria-current={cur('/proverka-dokumentov/')}>Проверка документов</a>
+          <a href="/park/" aria-current={cur('/park/')}>Парк техники</a>
+          <a href="/uslugi/lyubaya-podyomnaya-tehnika/" aria-current={cur('/uslugi/lyubaya-podyomnaya-tehnika/')}>Другая техника — партнёрская сеть</a>
+          <a href="/keysy/" aria-current={cur('/keysy/')}>Разборы задач</a>
+          <a href="/documents/" aria-current={cur('/documents/')}>Документы</a>
+          <a href="/faq/" aria-current={cur('/faq/')}>Вопросы</a>
+          <a href="/o-kompanii/" aria-current={cur('/o-kompanii/')}>О компании</a>
+          <a href="/contacts/" aria-current={cur('/contacts/')}>Контакты</a>
+          {/* Волна 39: два РАЗНЫХ документа по 152-ФЗ, а не один пункт
+              «Персональные данные». Политика — публичный документ оператора,
+              согласие — волеизъявление посетителя; с 01.09.2025 объединять их
+              в один текст запрещено. */}
+          <a href="/politika-obrabotki-personalnyh-dannyh/">Политика обработки ПД</a>
+          <a href="/soglasie-na-obrabotku-personalnyh-dannyh/">Согласие на обработку ПД</a>
+          <a href="tel:+79032690060">+7 (903) 269-00-60</a>
+        </nav>
+      </details>
+    </div>
+  </header>
+  {/* tabindex="-1" — иначе skip-link в части браузеров переводит только «точку
+      навигации», но не фокус, и следующий Tab возвращает пользователя в шапку. */}
+  <div id="main-content" tabindex="-1"><slot /></div>
+  <footer class="footer wrap">
+    <span>© 2026 {BRAND} · moskran-servis.ru</span>
+    <nav aria-label="Навигация в подвале" style="display:flex;gap:18px;flex-wrap:wrap">
+      <a href="/park/">Парк техники</a>
+      <a href="/uslugi/lyubaya-podyomnaya-tehnika/">Другая техника — партнёрская сеть</a>
+      <a href="/keysy/">Разборы задач</a>
+      <a href="/spravochnik/">Справочник</a>
+      <a href="/o-kompanii/">О компании</a>
+      <a href="/documents/">Документы</a>
+      <a href="/faq/">Частые вопросы</a>
+      <a href="/contacts/">Контакты</a>
+      <a href="/politika-obrabotki-personalnyh-dannyh/">Политика обработки ПД</a>
+      <a href="/soglasie-na-obrabotku-personalnyh-dannyh/">Согласие на обработку ПД</a>
+      <a href="tel:+79032690060">+7 (903) 269-00-60</a>
+    </nav>
+  </footer>
+
+  {/* Волна 12 — мобильная закреплённая CTA-панель. Две обычные ссылки: без JS
+      работает в полном объёме. Телефон — тот же, что в шапке, подвале и на
+      странице контактов (единственный телефон сайта). В конце <body>, чтобы не
+      разрывать tab-порядок страницы: панель визуально последняя и в DOM тоже. */}
+  <nav class="mcta" id="mobile-cta" aria-label="Быстрые действия">
+    <a class="mcta__btn mcta__btn--primary" href="/#zayavka">Заказать кран</a>
+    <a class="mcta__btn mcta__btn--call" href="tel:+79032690060">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>
+      <span>Позвонить</span>
+    </a>
+  </nav>
+
+  <script>
+    // Мобильная CTA-панель: два необязательных улучшения поверх работающей без JS вёрстки.
+    (function () {
+      const bar = document.getElementById('mobile-cta');
+      if (!bar) return;
+
+      // 1) Точный отступ снизу. CSS уже резервирует расчётную высоту, но при
+      //    увеличенном шрифте (зум 200%, WCAG 1.4.4) или другом safe-area реальная
+      //    высота отличается — измеряем и переписываем переменную фактическим значением.
+      const syncSpace = () => {
+        const h = bar.getBoundingClientRect().height;
+        if (h > 0) document.documentElement.style.setProperty('--mcta-space', h + 'px');
+        else document.documentElement.style.removeProperty('--mcta-space');
+      };
+      syncSpace();
+      window.addEventListener('resize', syncSpace);
+      window.addEventListener('orientationchange', syncSpace);
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(syncSpace).catch(() => {});
+
+      // 2) Панель уходит, когда форма заявки и так на экране — она бы только
+      //    закрывала её. Только ДОБАВЛЯЕТ класс при пересечении: если
+      //    IntersectionObserver не поддерживается или ни разу не сработает,
+      //    панель просто остаётся видимой (безопасный fallback, не исчезает навсегда).
+      const order = document.getElementById('zayavka');
+      if (order && 'IntersectionObserver' in window) {
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => bar.classList.toggle('is-hidden', e.isIntersecting));
+          },
+          { threshold: 0.15 }
+        );
+        io.observe(order);
+      }
+    })();
+  </script>
+
+
+  <script>
+    // Волна 13-D — 3D-наклон карточек-ссылок и блик, идущий за курсором.
+    // Скрипт НИЧЕГО не показывает и не прячет: он только пишет четыре CSS-переменные
+    // (--rx/--ry — угол, --gx/--gy — центр блика), которые CSS применяет внутри уже
+    // существующего hover-состояния. Не подключился скрипт — карточка ведёт себя как
+    // в Волне 10 (подъём + жёсткая тень + блик по центру сверху).
+    (function initCardTilt() {
+      const SELECTOR = 'a.park-card, a.keysy-card, a.post-card';
+      const cards = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR));
+      if (!cards.length) return;
+
+      // Явные JS-гейты, а не только CSS @media: при reduced-motion ИЛИ грубом
+      // указателе (тач) слушатели не навешиваются вовсе — нулевая цена на мобильных.
+      const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+      const finePointer = window.matchMedia('(pointer: fine)');
+
+      const MAX_DEG = 6; // ровно ±6°, как в постановке
+      let attached = false;
+
+      function onMove(e: PointerEvent) {
+        const card = e.currentTarget as HTMLElement;
+        const rect = card.getBoundingClientRect();
+        if (!rect.width || !rect.height) return;
+        const px = (e.clientX - rect.left) / rect.width;   // 0..1
+        const py = (e.clientY - rect.top) / rect.height;   // 0..1
+        // Курсор у правого края → карта поворачивается правым краем от зрителя.
+        card.style.setProperty('--ry', ((px - 0.5) * 2 * MAX_DEG).toFixed(2) + 'deg');
+        card.style.setProperty('--rx', ((0.5 - py) * 2 * MAX_DEG).toFixed(2) + 'deg');
+        card.style.setProperty('--gx', (px * 100).toFixed(1) + '%');
+        card.style.setProperty('--gy', (py * 100).toFixed(1) + '%');
+      }
+
+      function reset(card: HTMLElement) {
+        card.style.removeProperty('--rx');
+        card.style.removeProperty('--ry');
+        card.style.removeProperty('--gx');
+        card.style.removeProperty('--gy');
+      }
+
+      function onLeave(e: PointerEvent) { reset(e.currentTarget as HTMLElement); }
+
+      function attach() {
+        if (attached) return;
+        attached = true;
+        // pointermove вешается на сами карточки, а не на документ: он не срабатывает,
+        // пока курсор вне карточки, поэтому «дорогих» глобальных обработчиков нет.
+        cards.forEach((c) => {
+          c.addEventListener('pointermove', onMove);
+          c.addEventListener('pointerleave', onLeave);
+        });
+      }
+
+      function detach() {
+        if (!attached) return;
+        attached = false;
+        cards.forEach((c) => {
+          c.removeEventListener('pointermove', onMove);
+          c.removeEventListener('pointerleave', onLeave);
+          reset(c);
+        });
+      }
+
+      function evaluate() {
+        if (reduceMotion.matches || !finePointer.matches) detach();
+        else attach();
+      }
+
+      evaluate();
+      reduceMotion.addEventListener('change', evaluate);
+      finePointer.addEventListener('change', evaluate);
+    })();
+  </script>
+</body>
+</html>

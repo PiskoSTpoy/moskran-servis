@@ -1,0 +1,90 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sources from '../../../../components/Sources.astro';
+import PriceDisclaimer from '../../../../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../../../../lib/prices';
+
+const title = 'Автокран 40–50 тонн в Зеленограде — монтаж на предприятиях';
+const description = 'Тяжёлый автокран 40–50 тонн в Зеленограде: монтаж производственного оборудования на предприятиях микроэлектроники «Микрон» и «Ангстрем». Расчёт онлайн.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Автокраны 40–50 тонн', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/' },
+    { '@type': 'ListItem', position: 3, name: 'Зеленоград', item: 'https://moskran-servis.ru/uslugi/arenda-avtokrana-40-50-tonn/zelao/' },
+  ],
+};
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service', serviceType: 'Аренда автокрана 40-50 тонн в Зеленограде',
+  provider: { '@id': 'https://moskran-servis.ru/#organization' }, areaServed: 'Зеленоградский округ, Москва',
+};
+---
+<BaseLayout title={title} description={description} path="/uslugi/arenda-avtokrana-40-50-tonn/zelao/" ldExtra={[breadcrumbLd, serviceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/uslugi/arenda-avtokrana-40-50-tonn/">Автокраны 40–50 тонн</a><span>/</span><span>Зеленоград</span>
+  </nav>
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Автокран 40–50 т · Зеленоградский округ</span>
+      <h1>Автокран 40–50 тонн в Зеленограде</h1>
+      <p>Зеленоград — исторический центр советской и российской микроэлектроники: предприятия «Микрон» и «Ангстрем» регулярно требуют тяжёлый класс техники для монтажа и замены крупногабаритного технологического оборудования на действующем производстве.</p>
+    </div>
+  </section>
+  <section class="section wrap" style="padding-top:0;padding-bottom:clamp(28px,4vw,44px)">
+    <table class="adm">
+      <caption>Карточка допуска: автокран 40–50 т на предприятии Зеленограда</caption>
+      <thead><tr><th scope="col">Требование</th><th scope="col">Что это значит здесь</th><th scope="col">Основание</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Требование">Пропуск действующего производства</td><td data-label="Что это значит здесь">Списки людей и данных техники подаются заранее; на предприятиях с непрерывным циклом к пропуску добавляется согласование окна работ, потому что кран нельзя поставить в произвольный час.</td><td data-label="Основание">Регламент предприятия</td></tr>
+        <tr><td data-label="Требование">Плечо подачи</td><td data-label="Что это значит здесь">Зеленоград — за пределами МКАД, поэтому подача техники считается отдельной строкой и обсуждается индивидуально, а не усредняется в базовой ставке.</td><td data-label="Основание">Условия договора</td></tr>
+        <tr><td data-label="Требование">Какое освидетельствование действует</td><td data-label="Что это значит здесь">Частичное — раз в 12 месяцев, полное — раз в 3 года; на КПП спрашивают паспорт машины с записью и удостоверение оператора.</td><td data-label="Основание">ФНП №461, п. 165 и 189</td></tr>
+        <tr><td data-label="Требование">Ограничение по времени</td><td data-label="Что это значит здесь">Зеленоград — это Москва, и запрет шумных работ с 23:00 до 07:00 действует здесь так же. Ночное окно, удобное производству, и городское ограничение — вещи, которые надо свести заранее.</td><td data-label="Основание">Закон г. Москвы №42</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Монтаж оборудования на предприятиях электронной промышленности</h2>
+    <p>Производственные корпуса «Микрона» и «Ангстрема» — режимные объекты с действующим технологическим процессом, где грузоподъёмные работы требуют не только пропуска на территорию, но и согласования с инженерными службами предприятия из-за близости чувствительного производственного оборудования. Вес отдельных технологических установок на таких предприятиях нередко превышает возможности среднего класса техники, что делает 40–50-тонный класс типовым выбором для этой категории объектов округа.</p>
+
+    <h2 style="margin:36px 0 18px">Логистика — расстояние от МКАД как определяющий фактор</h2>
+    <p>Зеленоградский округ территориально обособлен от основной части Москвы и расположен на удалении порядка 37 км от МКАД по Ленинградскому шоссе. Для тяжёлого класса техники это означает больший запас времени на подачу по сравнению с округами внутри основной городской черты — рассчитываем логистическое плечо индивидуально с учётом реального расстояния от точки базирования техники, а не по усреднённому городскому тарифу. Подробнее об округе — на <a href="/geo/zelao/">гео-странице Зеленограда</a>.</p>
+
+    <h2 style="margin:36px 0 18px">Пропускной режим действующего производства</h2>
+    <p>Оформление допуска техники на территорию «Микрона» и «Ангстрема» проходит по правилам конкретного предприятия — процедура аналогична другим режимным промышленным объектам сети (см. услугу «Кран на режимный объект»), но для действующего высокотехнологичного производства чаще требуется дополнительный инструктаж бригады по требованиям чистоты и безопасности конкретного цеха, помимо стандартного пропуска на технику.</p>
+
+    <h2 style="margin:36px 0 18px">Цена для объекта в Зеленограде</h2>
+    <p>Базовая ставка — от 3 900 ₽/час (см. <a href="/#zayavka" style="color:var(--yellow)">ориентир по стоимости на главной</a>), стандартная для этого класса по Москве. Стоимость подачи техники для Зеленограда выше среднегородской из-за расстояния и рассчитывается индивидуально по адресу объекта; для объектов с действующим производственным пропускным режимом закладываем дополнительное время на согласование допуска.</p>
+    <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Что уточняем до выезда именно здесь</h2>
+    <p>Замена технологического оборудования на действующем производстве почти всегда означает работу рядом с приямками, кабельными каналами и траншеями. Правила задают минимальные расстояния от откоса выемки до опор отдельным приложением: они зависят от глубины и грунта, и «встать в метре от края» — не вариант, который можно согласовать на месте.</p>
+    <p>Второй момент — маршрут внутри территории. Ширина проезда, радиусы поворота и высота проёмов проверяются до выезда: разворачивать 50-тонную машину между корпусами по факту приезда дороже, чем потратить пять минут на схему.</p>
+    <Sources
+      checked="12.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 111 — откос котлована, п. 112 — 30 м до провода и наряд-допуск, п. 138 — пуск башенного крана, п. 165 и 189 — освидетельствование и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Закон г. Москвы от 12.07.2002 №42 и ст. 3.13 КоАП города Москвы — запрет шумных работ с 23:00 до 07:00 и размер штрафа' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .adm { width: 100%; border-collapse: collapse; margin: 6px 0 0; font-size: var(--t-md); }
+  .adm caption { text-align: left; font-family: var(--display); text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .adm th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .adm td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .adm td:first-child { width: 24%; font-weight: 700; }
+  .adm td:last-child { width: 24%; color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 760px) {
+    .adm, .adm tbody, .adm tr, .adm td { display: block; width: 100%; }
+    .adm thead { display: none; }
+    .adm tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .adm td { border: none; padding: 5px 0; }
+    .adm td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .adm td:first-child, .adm td:last-child { width: 100%; }
+  }
+</style>
+</BaseLayout>

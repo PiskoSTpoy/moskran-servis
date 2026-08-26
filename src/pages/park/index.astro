@@ -1,0 +1,244 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Sources from '../../components/Sources.astro';
+import PriceDisclaimer from '../../components/PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../../lib/prices';
+
+const title = 'Парк техники — модели автокранов и башенных кранов в Москве';
+const description = 'Классы техники, которую мы подбираем под задачу: автокраны 25–50 т и башенный кран. Реальные технические характеристики производителя по каждой модели.';
+
+const models = [
+  { href: '/park/ivanovets-ks-35714/', name: 'Ивановец КС-35714', tonnage: '16 т', type: 'Автокран', capacityT: 16, price: 17600, priceUnit: 'смена' },
+  { href: '/park/ivanovets-ks-45717/', name: 'Ивановец КС-45717', tonnage: '25 т', type: 'Автокран', capacityT: 25, price: 20800, priceUnit: 'смена' },
+  { href: '/park/klintsy-ks-55713/', name: 'Клинцы КС-55713', tonnage: '25 т', type: 'Автокран', capacityT: 25, price: 20800, priceUnit: 'смена' },
+  { href: '/park/xcmg-qy25k5/', name: 'XCMG QY25K5-I', tonnage: '25 т', type: 'Автокран', capacityT: 25, price: 20800, priceUnit: 'смена' },
+  { href: '/park/galichanin-ks-65713-1/', name: 'Галичанин КС-65713-1', tonnage: '50 т', type: 'Автокран', capacityT: 50, price: 31200, priceUnit: 'смена' },
+  { href: '/park/liebherr-ltm-1050/', name: 'Liebherr LTM 1050-3.1', tonnage: '50 т', type: 'Автокран', capacityT: 50, price: 31200, priceUnit: 'смена' },
+  { href: '/park/zoomlion-qy50v/', name: 'Zoomlion QY50V', tonnage: '50 т', type: 'Автокран', capacityT: 50, price: 31200, priceUnit: 'смена' },
+  { href: '/park/xcmg-quy50/', name: 'XCMG QUY50', tonnage: '50 т', type: 'Гусеничный кран', capacityT: 50, price: 50000, priceUnit: 'смена' },
+  { href: '/park/liebherr-132-ec-h8/', name: 'Liebherr 132 EC-H8', tonnage: '132 тм', type: 'Башенный кран', capacityT: 8, tower: true, price: 780000, priceUnit: 'мес' },
+  { href: '/park/potain-mdt-178/', name: 'Potain MDT 178', tonnage: '8 т / вылет 60 м', type: 'Башенный кран', capacityT: 8, tower: true, price: 650000, priceUnit: 'мес' },
+  { href: '/park/chelyabinets-ks-55732/', name: 'Челябинец КС-55732-24', tonnage: '25 т', type: 'Автокран', capacityT: 25, price: 20800, priceUnit: 'смена' },
+  { href: '/park/sany-scc550e/', name: 'SANY SCC550E', tonnage: '55 т', type: 'Гусеничный кран', capacityT: 55, price: 55000, priceUnit: 'смена' },
+  { href: '/park/ivanovets-ks-8973/', name: 'Ивановец КС-8973', tonnage: '100 т', type: 'Автокран', capacityT: 100, price: 70000, priceUnit: 'смена' },
+];
+// Волна 33 / цена в карточках парка: те же числа, что и в JSON-LD/панели цены на
+// странице каждой модели (см. комментарии там же — откуда взята каждая цифра и какие
+// источники WebSearch использованы, kran365.ru нигде не использовался). Здесь только
+// отображение, вторая независимая цифра не вводится.
+
+/* Волна 26: сравнение по грузоподъёмности — честно из тех же чисел, что уже стоят в таблицах
+   характеристик на страницах моделей (см. capacityT выше и комментарий у каждого поля).
+   Для башенных кранов capacityT — это ГРУЗОПОДЪЁМНОСТЬ У МАЧТЫ (на минимальном вылете), а не
+   грузовой момент (132 тм у Liebherr — другая величина, момент = грузоподъёмность × вылет, и
+   прямое сравнение тонн с тонно-метрами было бы нечестной подменой). Обе башенные модели помечены
+   tower:true и получают отдельный штрих на баре + отдельную сноску под графиком — то же самое
+   предупреждение, что уже в тексте ниже про "число в названии — это грузоподъёмность на
+   минимальном вылете". Максимум берётся из тех же данных, не хардкодится отдельной константой. */
+const maxCapacity = Math.max(...models.map((m) => m.capacityT));
+const chartModels = [...models].sort((a, b) => b.capacityT - a.capacityT);
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Парк техники', item: 'https://moskran-servis.ru/park/' },
+  ],
+};
+---
+<BaseLayout title={title} description={description} path="/park/" ldExtra={[breadcrumbLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><span>Парк техники</span>
+  </nav>
+
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Парк техники</span>
+      <h1>Классы техники, которую мы подбираем под задачу</h1>
+      {/* Волна 124. Лид был одним абзацем в 11 строк на 375 px и в 13 на 320 —
+          между заголовком и первой карточкой техники стояла сплошная серая
+          стена, а фото парка уезжало за сгиб. Текст НЕ сокращён: он разбит на
+          две фразы, вторая (про подбор по грузовысотной характеристике)
+          перенесена под фото — она объясняет, как читать карточки, и на своём
+          новом месте работает лучше, чем в разгоне перед ними. */}
+      <p>Мы не держим весь перечисленный ниже парк в собственности постоянно — это ориентир по {models.length} моделям техники, которые реально применяются на задачах такого типа в Москве, с проверенными техническими характеристиками производителя.</p>
+    </div>
+    <figure class="park-hero">
+      <picture>
+        <source srcset="/images/hero/park-hero.webp" type="image/webp" />
+        {/* Волна 39: 1920×1440 → 1600×1200. Файл весил 330 КБ при бюджете 300 КБ
+            на изображение, а 1920 px никому не были нужны: колонка страницы —
+            1180 px минус padding, то есть ~1060 CSS-px, и 1600 остаётся с запасом
+            в 1,5× под плотные экраны. Размеры в атрибутах обновлены вместе с
+            файлом — иначе браузер зарезервировал бы неверную пропорцию и дал CLS. */}
+        <img
+          src="/images/hero/park-hero.jpg"
+          width="1600"
+          height="1200"
+          loading="eager"
+          decoding="async"
+          alt="Мобильный кран поднимает груз на строительной площадке — атмосферное фото, не конкретный объект и не техника нашего парка"
+        />
+      </picture>
+      <figcaption>Атмосферное фото, иллюстрация задачи «кран на площадке» — не съёмка нашего объекта и не единица нашего парка. Автор: Саша Ромадин, <a href="https://www.pexels.com/license/" target="_blank" rel="noopener">Pexels License</a>, <a href="https://www.pexels.com/photo/industrial-cranes-at-a-construction-site-13832413/" target="_blank" rel="noopener">Pexels</a>.</figcaption>
+    </figure>
+    <p class="park-note">Под конкретную заявку подбираем модель, подходящую по грузовысотной характеристике, а не первую попавшуюся с нужным тоннажем в названии.</p>
+    <div class="park-grid">
+      {models.map((m) => (
+        <a class="park-card box" href={m.href}>
+          <span class="park-card__type">{m.type}</span>
+          <h2>{m.name}</h2>
+          <span class="park-card__tonnage">{m.tonnage}</span>
+          <span class="park-card__price">от {m.price.toLocaleString('ru-RU')} ₽/{m.priceUnit}</span>
+        </a>
+      ))}
+    </div>
+    <PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+
+    <div class="capchart-wrap">
+      <h2 class="capchart-h">Сравнение по грузоподъёмности</h2>
+      <p class="capchart-lead">Все {models.length} моделей парка на одной шкале — числа те же, что в таблице характеристик на странице каждой модели (ссылка в конце строки).</p>
+      <ul class="capchart" role="list">
+        {chartModels.map((m) => (
+          <li class="capchart__row">
+            <a class="capchart__label" href={m.href}>{m.name}</a>
+            <span class="capchart__barwrap">
+              <span
+                class={`capchart__bar${m.tower ? ' capchart__bar--tower' : ''}`}
+                style={`width:${(m.capacityT / maxCapacity * 100).toFixed(1)}%`}
+              ></span>
+            </span>
+            <span class="capchart__value">{m.capacityT} т</span>
+          </li>
+        ))}
+      </ul>
+      <p class="capchart-note"><span class="capchart__swatch" aria-hidden="true"></span> Штриховкой — башенные краны (Liebherr 132 EC-H8, Potain MDT 178): их {models.find((m) => m.tower)?.capacityT} т — это грузоподъёмность у мачты, на минимальном вылете, как и у остальных машин на этой шкале. У Liebherr в карточке выше указан ещё грузовой момент 132 тм — это другая величина (момент = грузоподъёмность × вылет), а не грузоподъёмность в тоннах, поэтому в сравнение попало паспортное значение в тоннах, а не момент.</p>
+    </div>
+  </section>
+
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:16px">Три вопроса, которые решают выбор — и ни один из них не про тоннаж</h2>
+    <p><b>Первый: какой вылет реально доступен.</b> Число в названии машины — это грузоподъёмность на минимальном вылете, почти у основания стрелы. Как только кран отъезжает от точки подъёма, доступная грузоподъёмность падает, и падает нелинейно. Поэтому 25-тонная машина с длинной стрелой и 25-тонная с короткой — это разные машины для одной и той же задачи, если груз лежит в пятнадцати метрах от места, куда кран может встать.</p>
+    <p><b>Второй: что находится под пятном опор.</b> В Москве точка постановки крана чаще оказывается не на природном грунте, а на перекрытии подземного паркинга, плитке над сетями, кровле стилобата или обратной засыпке пазух котлована. Правила прямо запрещают устанавливать подъёмное сооружение для работы на свеженасыпанном неутрамбованном грунте и на площадке с уклоном больше указанного в паспорте. Отсюда обратный порядок подбора: сначала допустимая нагрузка на пятно, потом самая лёгкая машина, которой хватит вылета.</p>
+    <p><b>Третий: как машина попадёт на объект.</b> Автокран доезжает своим ходом, но при разрешённой массе свыше 3,5 т — по пропуску грузового каркаса и с регистрацией в РНИС. Гусеничный кран приезжает только на трале: это вторая транспортная задача со своим сроком и своим согласованием. Башенный кран вообще не «приезжает» — он монтируется, и его пуск в работу после установки на объекте принимается комиссией с участием уполномоченного представителя надзорного органа.</p>
+
+    <h2 style="margin:36px 0 16px">Вылет и высота подъёма — сравнение по моделям</h2>
+    <p>Число в названии модели отвечает только на вопрос «сколько крана» — а вылет и высота отвечают на вопрос «докуда крана хватит», и падает грузоподъёмность с вылетом не плавно, а резко. Показательный пример независимо от нашего парка: у 25-тонного автокрана класса Ивановец на вылете 3 м паспортная грузоподъёмность — 25 т, но уже на 7 м — 12 т, на 10 м — 7 т, на 14 м — 4 т, а на 22 м — всего 1,5 т. Это не наша оценка, а данные открытого технического справочника; для нашей 25-тонной машины в парке (Ивановец КС-45717) значения нужно смотреть в её собственной грузовысотной характеристике, но порядок падения — тот же самый, и это стоит держать в голове до того, как называть тоннаж машины единственным критерием выбора.</p>
+    <p>Ниже — вылет (или длина стрелы) и высота подъёма по каждой модели парка, взятые из тех же таблиц характеристик, что уже опубликованы на странице каждой машины. Не все производители публикуют максимальную высоту подъёма как отдельную паспортную величину в открытых источниках — для пяти моделей ниже это честно показано прочерком, а не подставленной цифрой; точное значение для конкретной поставки даёт паспорт машины.</p>
+    <table class="cmp">
+      <caption class="sr-only">Вылет стрелы и высота подъёма по моделям парка</caption>
+      <thead>
+        <tr><th scope="col">Модель</th><th scope="col">Тип</th><th scope="col">Стрела / вылет</th><th scope="col">Высота подъёма</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><a href="/park/ivanovets-ks-35714/" style="color:inherit">Ивановец КС-35714</a></td><td>Автокран, 16 т</td><td>телескопическая, трёхсекционная (длина в открытых данных не публикуется)</td><td>—</td></tr>
+        <tr><td><a href="/park/ivanovets-ks-45717/" style="color:inherit">Ивановец КС-45717</a></td><td>Автокран, 25 т</td><td>до 31 м</td><td>до 40,1 м (28,2 м на гуське)</td></tr>
+        <tr><td><a href="/park/klintsy-ks-55713/" style="color:inherit">Клинцы КС-55713</a></td><td>Автокран, 25 т</td><td>21–24 м (10–24 м у трёхсекционных версий)</td><td>—</td></tr>
+        <tr><td><a href="/park/xcmg-qy25k5/" style="color:inherit">XCMG QY25K5-I</a></td><td>Автокран, 25 т</td><td>10,5–41 м</td><td>9,8–48,5 м</td></tr>
+        <tr><td><a href="/park/chelyabinets-ks-55732/" style="color:inherit">Челябинец КС-55732-24</a></td><td>Автокран, 25 т</td><td>24,5 м</td><td>до 25,2 м (при грузе 6,5 т)</td></tr>
+        <tr><td><a href="/park/galichanin-ks-65713-1/" style="color:inherit">Галичанин КС-65713-1</a></td><td>Автокран, 50 т</td><td>до 34,1 м</td><td>—</td></tr>
+        <tr><td><a href="/park/liebherr-ltm-1050/" style="color:inherit">Liebherr LTM 1050-3.1</a></td><td>Автокран, 50 т</td><td>38 м</td><td>55 м</td></tr>
+        <tr><td><a href="/park/zoomlion-qy50v/" style="color:inherit">Zoomlion QY50V</a></td><td>Автокран, 50 т</td><td>42 м (гусёк 16,2 м → до 58 м)</td><td>53 м</td></tr>
+        <tr><td><a href="/park/ivanovets-ks-8973/" style="color:inherit">Ивановец КС-8973</a></td><td>Автокран, 100 т</td><td>3,0–46,0 м</td><td>41,5 м (59,0 м с гуськом)</td></tr>
+        <tr><td><a href="/park/xcmg-quy50/" style="color:inherit">XCMG QUY50</a></td><td>Гусеничный кран, 50 т</td><td>52 м (гусёк 15,25 м)</td><td>57,7 м</td></tr>
+        <tr><td><a href="/park/sany-scc550e/" style="color:inherit">SANY SCC550E</a></td><td>Гусеничный кран, 55 т</td><td>13–52 м</td><td>—</td></tr>
+        <tr><td><a href="/park/potain-mdt-178/" style="color:inherit">Potain MDT 178</a></td><td>Башенный кран, 8 т</td><td>вылет до 60 м</td><td>до 74,5 м</td></tr>
+        <tr><td><a href="/park/liebherr-132-ec-h8/" style="color:inherit">Liebherr 132 EC-H8</a></td><td>Башенный кран, 8 т</td><td>момент 132 тм (вылет в метрах производитель не публикует)</td><td>50,5–72,1 м, зависит от секции мачты</td></tr>
+      </tbody>
+    </table>
+    <p class="capchart-note" style="margin-top:14px">Два башенных крана в таблице показывают, что у них разная система паспортных величин: Potain нормирует вылет стрелы в метрах напрямую, а Liebherr — грузовой момент в тонно-метрах (произведение вылета на грузоподъёмность), и метровое значение вылета для конкретной точки кривой из этой величины напрямую не выводится без остальной грузовой характеристики. Сравнивать эти два числа напрямую как «одно и то же» было бы нечестной подменой — поэтому в таблице выше они показаны раздельно, как есть у производителя.</p>
+
+    <h2 style="margin:36px 0 16px">Что меняется в допуске в зависимости от типа машины</h2>
+    <table class="cmp">
+      <caption class="sr-only">Различия в допуске техники на объект по типу опирания и доставки</caption>
+      <thead>
+        <tr><th scope="col">Тип</th><th scope="col">Опирание</th><th scope="col">Доставка</th><th scope="col">Что добавляется в допуск</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Автокран</td>
+          <td>выносные опоры — все, если руководство по эксплуатации не предусматривает иного</td>
+          <td>своим ходом; при разрешённой массе свыше 3,5 т — пропуск и РНИС</td>
+          <td>расчёт пятна под опоры, инвентарные подкладки, маршрут с учётом ограничений по массе</td>
+        </tr>
+        <tr>
+          <td>Гусеничный кран</td>
+          <td>гусеничный ход, нагрузка распределённая, а не точечная</td>
+          <td>только на трале, с отдельным согласованием перевозки</td>
+          <td>срок и стоимость перевозки, схема заезда и разворота, проверка ширины хода</td>
+        </tr>
+        <tr>
+          <td>Башенный кран</td>
+          <td>фундамент или крепление к зданию по проекту</td>
+          <td>монтаж на объекте из секций, доставляемых отдельно</td>
+          <td>акт освидетельствования скрытых работ по основанию и пуск в работу комиссией с представителем надзорного органа</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2 style="margin:36px 0 16px">Что одинаково для любой машины из списка</h2>
+    <p>Периодичность технического освидетельствования не зависит ни от страны производства, ни от типа ходовой части: частичное — не реже одного раза в 12 месяцев, полное — не реже одного раза в 3 года (для редко используемых подъёмных сооружений — раз в 5 лет). При полном освидетельствовании проводятся статические испытания грузом 125 % от паспортной грузоподъёмности и динамические — грузом на 10 % выше паспортной. Результаты записываются в паспорт машины с указанием срока следующего освидетельствования — то есть одна страница паспорта отвечает сразу на вопрос, действует ли допуск сегодня.</p>
+    <p>Импортная техника выпускается в обращение по техническому регламенту Таможенного союза «О безопасности машин и оборудования», а эксплуатируется по российским федеральным нормам и правилам. Это два разных документа, и наличие декларации соответствия не заменяет записи об освидетельствовании.</p>
+    <p>Проверить весь комплект под конкретный объект можно за минуту — <a href="/proverka-dokumentov/" style="color:var(--yellow)">чек-лист допуска</a> покажет, чего не хватает и сколько времени добавляет каждая недостающая позиция.</p>
+
+    <Sources
+      checked="19.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 138 — пуск в работу, п. 165 — периодичность освидетельствования, п. 171 и 179 — нагрузки при испытаниях, п. 189 — запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Единый транспортный портал Москвы — пропуск для ТС с разрешённой массой свыше 3,5 т в границах МКАД и регистрация в РНИС', href: 'https://transport.mos.ru/gruzoviki/perevod_ckad' },
+        { text: 'Технопик — грузовая характеристика автокрана: пример падения грузоподъёмности с ростом вылета для 25-тонного автокрана класса Ивановец', href: 'https://tehnopik.ru/spravochnik/gruzopodyomnost-krana' },
+      ]}
+      note="Технические характеристики моделей взяты из данных производителей и приведены на страницах самих моделей. Своей фотосъёмки парка мы пока не делали. У шести моделей (Liebherr 132 EC-H8, Potain MDT 178, SANY SCC550E, Ивановец КС-35714, Ивановец КС-45717, Челябинец КС-55732-24) на их страницах добавлено реальное фото именно этой модели производителя со свободной лицензией (Wikimedia Commons, атрибуция под фото) — это иллюстрация внешнего вида модели, не съёмка конкретной машины, которая приедет на объект, и не наш парк. У остальных семи моделей (Liebherr LTM 1050-3.1, XCMG QY25K5-I, Ивановец КС-8973, Клинцы КС-55713, Галичанин КС-65713-1, Zoomlion QY50V, XCMG QUY50) свободно лицензированного фото найти не удалось, несмотря на проверку — там по-прежнему только схема с паспортными размерами, чужие нелицензированные кадры мы не используем, чтобы не вводить в заблуждение. Ориентировочная стоимость аренды на карточках и странице каждой модели — наше собственное ценовое предложение, сверенное с открытым рынком аренды спецтехники в Москве (обоснование и источники — в примечании на странице конкретной модели)."
+    />
+  </section>
+</main>
+<style>
+  .park-hero { margin: 22px 0 28px; }
+  .park-hero img { display: block; width: 100%; height: auto; border: 1px solid var(--line-strong); max-height: 420px; object-fit: cover; }
+  .park-hero figcaption { margin-top: 10px; font-size: var(--t-xs); color: var(--muted); max-width: 80ch; }
+  .park-hero figcaption a { color: var(--muted); text-decoration: underline; text-underline-offset: 2px; }
+  .park-hero figcaption a:hover { color: var(--yellow); }
+  /* Вторая половина прежнего лида, переехавшая под фото (волна 124). Кегль лида,
+     а не сноски: это правило чтения карточек, а не примечание к фотографии. */
+  .park-note { margin: 0 0 22px; max-width: 74ch; color: var(--muted); font-size: var(--t-lead); }
+  .park-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .cmp { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: var(--t-md); }
+  .cmp th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .cmp td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .cmp td:first-child { font-weight: 700; width: 18%; }
+  @media (max-width: 800px) {
+    .cmp, .cmp tbody, .cmp tr, .cmp td { display: block; width: 100%; }
+    .cmp thead { display: none; }
+    .cmp tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .cmp td { border: none; padding: 3px 0; }
+    .cmp td:first-child { width: 100%; }
+  }
+  .capchart-wrap { margin-top: clamp(32px, 5vw, 52px); }
+  .capchart-h { font-size: var(--t-h2); }
+  .capchart-lead { margin-top: 12px; max-width: 70ch; color: var(--muted); font-size: var(--t-md); }
+  .capchart { list-style: none; margin: 22px 0 0; padding: 0; display: grid; gap: 2px; }
+  .capchart__row { display: grid; grid-template-columns: 200px 1fr 44px; align-items: center; gap: 12px; padding: 6px 0; }
+  .capchart__label { font-size: var(--t-md); text-decoration: none; color: var(--ink); }
+  .capchart__label:hover { color: var(--yellow); text-decoration: underline; }
+  .capchart__barwrap { background: var(--bg-2); height: 16px; position: relative; }
+  .capchart__bar { display: block; height: 100%; background: var(--yellow); min-width: 3px; }
+  .capchart__bar--tower { background: repeating-linear-gradient(45deg, var(--yellow) 0 5px, var(--bg-2) 5px 10px); border: 1px solid var(--yellow); box-sizing: border-box; }
+  .capchart__value { font-size: var(--t-md); font-weight: 700; text-align: right; font-variant-numeric: tabular-nums; }
+  .capchart-note { margin-top: 16px; max-width: 74ch; font-size: var(--t-sm); color: var(--muted); display: flex; gap: 8px; align-items: flex-start; }
+  .capchart__swatch { display: inline-block; width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px; background: repeating-linear-gradient(45deg, var(--yellow) 0 5px, var(--bg-2) 5px 10px); border: 1px solid var(--yellow); }
+  @media (max-width: 640px) {
+    .capchart__row { grid-template-columns: 1fr 40px; grid-template-areas: "label label" "bar value"; row-gap: 4px; }
+    .capchart__label { grid-area: label; }
+    .capchart__barwrap { grid-area: bar; }
+    .capchart__value { grid-area: value; }
+  }
+  .park-card { display: block; text-decoration: none; padding: 26px; background: var(--bg-2); border: 1px solid var(--line-strong); }
+  .park-card:hover { border-color: var(--yellow); }
+  .park-card__type { color: var(--yellow); font-size: var(--t-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; }
+  .park-card h2 { font-size: var(--t-lead); margin-top: 10px; text-transform: none; }
+  .park-card__tonnage { display: block; margin-top: 10px; color: var(--muted); font-size: var(--t-md); }
+  .park-card__price { display: block; margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--line-strong); color: var(--yellow); font-size: var(--t-md); font-weight: 700; }
+  @media (max-width: 800px) { .park-grid { grid-template-columns: 1fr; } }
+  .box { background: var(--bg-2); }
+</style>
+</BaseLayout>

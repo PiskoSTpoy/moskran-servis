@@ -1,0 +1,539 @@
+---
+// SpravochnikLayout — wraps BaseLayout and adds three UX enhancements standard for a
+// нормативной статьи справочника: reading-progress bar, sticky Table of Contents built from the
+// article's <h2>'s, and a "Related posts" block at the bottom.
+// Volна 11.
+import BaseLayout from './BaseLayout.astro';
+
+export interface Props {
+  title: string;
+  description: string;
+  path: string;
+  ldExtra?: object[];
+  slug: string;
+}
+const { title, description, path, ldExtra = [], slug } = Astro.props;
+
+// Build a manifest of all spravochnik entries by parsing the raw source of every
+// pages/spravochnik/*/index.astro. This is the honest single source — related posts
+// are picked from files that actually exist and are actually shipped.
+const files = import.meta.glob<string>('../pages/spravochnik/*/index.astro', {
+  query: '?raw',
+  import: 'default',
+  eager: true,
+});
+type PostMeta = { slug: string; title: string; description: string; eyebrow: string };
+const posts: PostMeta[] = Object.entries(files)
+  .map(([file, raw]) => {
+    const s = file.match(/spravochnik\/([^/]+)\/index\.astro$/)?.[1] ?? '';
+    const t = raw.match(/const\s+title\s*=\s*['"]([^'"]+)['"]/)?.[1] ?? '';
+    const d = raw.match(/const\s+description\s*=\s*['"]([^'"]+)['"]/)?.[1] ?? '';
+    const e = raw.match(/<span class="eyebrow">([^<]+)<\/span>/)?.[1] ?? '';
+    return { slug: s, title: t, description: d, eyebrow: e };
+  })
+  .filter((p) => p.slug && p.title);
+
+// Related picking: alphabetical neighbourhood of the current slug (a stable,
+// honest fallback — no fake "personalization"). Pick previous, next, next+1;
+// wrap around the ends. If the list is short, pad with the tail.
+const otherPosts = posts.filter((p) => p.slug !== slug);
+otherPosts.sort((a, b) => a.slug.localeCompare(b.slug));
+let related: PostMeta[] = [];
+if (otherPosts.length) {
+  const n = otherPosts.length;
+  const nextIdx = otherPosts.findIndex((p) => p.slug > slug);
+  const anchor = nextIdx === -1 ? 0 : nextIdx;
+  const picks = [(anchor - 1 + n) % n, anchor % n, (anchor + 1) % n];
+  const seen = new Set<string>();
+  for (const i of picks) {
+    const p = otherPosts[i];
+    if (p && !seen.has(p.slug)) {
+      seen.add(p.slug);
+      related.push(p);
+    }
+  }
+  // If dedupe left us <3 (tiny corpus), fill from remaining tail.
+  for (const p of otherPosts) {
+    if (related.length >= 3) break;
+    if (!seen.has(p.slug)) {
+      seen.add(p.slug);
+      related.push(p);
+    }
+  }
+  related = related.slice(0, 3);
+}
+---
+<BaseLayout title={title} description={description} path={path} ldExtra={ldExtra}>
+  {/* Reading-progress bar: hidden until JS marks <html class="js">, so no-JS
+     users see zero visual noise. It's an indication of state, not decoration —
+     so it remains active under prefers-reduced-motion (just without transition). */}
+  <div class="reading-progress" aria-hidden="true"><div class="bar"></div></div>
+
+  {/* Desktop ToC anchor: fixed to the right edge on wide viewports, hidden on
+     mobile. Populated client-side from the article's <h2>'s. If there are <3
+     headings the script leaves it hidden and doesn't render anything. */}
+  <aside class="ref-toc ref-toc--desktop" id="ref-toc-desktop" aria-label="Оглавление статьи" hidden>
+    <div class="ref-toc__label">На этой странице</div>
+    <ol class="ref-toc__list"></ol>
+  </aside>
+
+  <slot />
+
+  {related.length > 0 && (
+    <section class="section wrap related-posts" aria-labelledby="related-heading">
+      <h2 id="related-heading" class="related-posts__heading">Рядом в справочнике</h2>
+      <div class="related-posts__grid">
+        {related.map((p) => (
+          <a class="post-card related-card" href={`/spravochnik/${p.slug}/`}>
+            {p.eyebrow && <span class="eyebrow">{p.eyebrow}</span>}
+            <h3 class="related-card__title">{p.title}</h3>
+            <p class="related-card__desc">{p.description}</p>
+            <span class="related-card__more" aria-hidden="true">Читать →</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  )}
+
+  <style is:global>
+    /* ==== Волна 123. АППАРАТ СТАТЬИ ==========================================
+       Разбор перед правкой: страница справочника — самая массовая на сайте
+       (46 из 144) и при этом единственная, где не было ни одного визуального
+       устройства вообще. Разметка статьи целиком: h1, серая строка выходных
+       данных, дальше h2 и <p>, h2 и <p>, список, FAQ, источники. Ни панели,
+       ни плашки, ни собственного мотива — то есть ровно тот текст, который
+       выглядит одинаково на любом сайте мира. Ниже добавлены три устройства
+       и ни одного слова текста.
+
+       1) ЗАГОЛОВОК РАЗДЕЛА получает слева короткий отрезок разметки. Это не
+          «буллет» и не иконка: тот же мотив, что на кромке шапки и на
+          щитках, приведённый к масштабу строки. Отрицательный отступ
+          вынесен в поле, поэтому текст заголовка остаётся на общей левой
+          линии колонки и типографская ось статьи не ломается. На узком
+          экране (<720px) метка убирается в поток над заголовком — сдвигать
+          колонку на 34px там нечем. */
+    article.prose h2 {
+      position: relative;
+      padding-left: 34px;
+    }
+    article.prose h2::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      /* Привязка к КЕГЛЮ, а не к высоте строки: у Russo One прописная
+         занимает .700 em, поэтому середина знака лежит на .35 em от
+         верха чернильной строки. Так метка стоит по оптической середине
+         первой строки и не уезжает, если заголовок переносится. */
+      top: calc(.58em);
+      width: 22px;
+      height: 9px;
+      background: var(--hazard-fine);
+    }
+    @media (max-width: 720px) {
+      article.prose h2 { padding-left: 0; }
+      article.prose h2::before { position: static; display: block; margin-bottom: 10px; }
+    }
+
+    /* 2) ВЫХОДНЫЕ ДАННЫЕ. Было: серый абзац .86rem, неотличимый от любой
+          другой подписи на сайте. Стало: строка технического паспорта —
+          заголовочная гарнитура, разрядка, волосяная рамка сверху и снизу.
+          Тот же текст, тот же смысл, но читается как реквизит документа, а
+          не как подпись под картинкой. Класс вешается на уже существующий
+          абзац (53 файла, одна замена в каждом), новых элементов в разметке
+          не появляется. */
+    .ref-byline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 12px;
+      margin: 18px 0 30px;
+      padding: 9px 0;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+      font-family: var(--display);
+      font-size: var(--t-xs);
+      letter-spacing: .09em;
+      text-transform: uppercase;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+    .ref-byline::before {
+      content: '';
+      flex: none;
+      width: 26px;
+      height: 9px;
+      background: var(--hazard-fine);
+    }
+
+    /* 3) «КОРОТКО: ЧТО ЗАПОМНИТЬ» — единственный блок статьи, который люди
+          читают вместо статьи, и до этой волны он был обычным <ul> с
+          точками, визуально слабее окружающего текста. Стал плашкой с
+          маркировочной кромкой сверху: тот же приём, что у щитка «Три
+          входа» и у панели показателей на главной, — на сайте появляется
+          семейство плашек, а не набор разных коробок.
+          Правило берёт список СОСЕДНИМ селектором (h2 + ul), поэтому в
+          каждом из 53 файлов правится только заголовок. */
+    .ref-takeaway + ul {
+      position: relative;
+      list-style: none;
+      margin: 0;
+      padding: 26px 24px 24px;
+      background: var(--bg-2);
+      border: 1px solid var(--line-strong);
+      border-top: none;
+      display: grid;
+      gap: 12px;
+    }
+    .ref-takeaway + ul::before {
+      content: '';
+      position: absolute;
+      left: -1px; right: -1px; top: 0;
+      height: 8px;
+      background: var(--hazard);
+    }
+    .ref-takeaway + ul li { position: relative; padding-left: 26px; }
+    .ref-takeaway + ul li + li { margin-top: 0; }
+    /* Метка пункта — квадрат, а не точка: у списка нет ни одного круглого
+       элемента, а нулевые радиусы объявлены в дизайн-коде сайта. */
+    .ref-takeaway + ul li::before {
+      content: '';
+      position: absolute;
+      left: 0; top: .52em;
+      width: 9px; height: 9px;
+      background: var(--yellow);
+    }
+
+    /* ==== Reading-progress bar ==============================================
+       Fixed 3px strip on top of the viewport, scaleX'd from 0 → 1 as the user
+       scrolls through <article>. Hidden by default so no-JS visitors don't see
+       an empty stripe; JS unlocks it by setting <html class="js">. */
+    .reading-progress {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      z-index: 100;
+      pointer-events: none;
+      background: rgba(255, 214, 0, .12);
+    }
+    html.js .reading-progress { display: block; }
+    .reading-progress .bar {
+      height: 100%;
+      width: 100%;
+      background: var(--yellow);
+      transform-origin: 0 50%;
+      transform: scaleX(0);
+      transition: transform 90ms linear;
+      will-change: transform;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .reading-progress .bar { transition: none; }
+    }
+
+    /* ==== Table of contents =================================================
+       Desktop: fixed to the right edge of the viewport under the sticky nav,
+       narrow column, brutalist frame in the site palette. Hidden on <1180px so
+       it never overlaps the article's centred column.
+       Mobile: a <details> block cloned by JS into the top of <article>. */
+    .ref-toc {
+      font-family: var(--sans);
+    }
+    .ref-toc__label {
+      font-family: var(--display);
+      text-transform: uppercase;
+      color: var(--yellow);
+      font-size: var(--t-xs);
+      letter-spacing: .08em;
+      margin-bottom: 12px;
+    }
+    .ref-toc__list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .ref-toc__list li { margin: 0; }
+    .ref-toc__list a {
+      display: block;
+      text-decoration: none;
+      color: var(--muted);
+      font-size: var(--t-sm);
+      line-height: 1.35;
+      border-left: 2px solid var(--line);
+      padding: 4px 0 4px 12px;
+      transition: color 160ms, border-color 160ms;
+    }
+    .ref-toc__list a:hover { color: var(--ink); border-left-color: var(--yellow); }
+    .ref-toc__list a.is-active {
+      color: var(--yellow);
+      border-left-color: var(--yellow);
+      font-weight: 600;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .ref-toc__list a { transition: none; }
+    }
+
+    /* Desktop sticky ToC to the right of the article column. */
+    .ref-toc--desktop {
+      position: fixed;
+      top: 96px;
+      right: max(16px, calc((100vw - var(--maxw)) / 2 - 200px));
+      width: 220px;
+      max-height: calc(100vh - 120px);
+      overflow-y: auto;
+      z-index: 5;
+      padding: 16px 14px 16px 12px;
+      background: var(--bg-2);
+      border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box;
+    }
+    /* Hide the desktop ToC on narrower viewports — it either overlaps the
+       article or gets pushed off-screen. The <details> clone at the top of the
+       article handles mobile. */
+    @media (max-width: 1280px) {
+      .ref-toc--desktop { display: none !important; }
+    }
+
+    /* Mobile ToC (details), inserted by JS at the top of <article>. */
+    .ref-toc--mobile {
+      margin: 0 0 28px 0;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box;
+    }
+    .ref-toc--mobile > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 12px 16px;
+      font-family: var(--display);
+      text-transform: uppercase;
+      color: var(--yellow);
+      font-size: var(--t-sm);
+      letter-spacing: .08em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .ref-toc--mobile > summary::-webkit-details-marker { display: none; }
+    .ref-toc--mobile > summary::after {
+      content: '+';
+      font-family: var(--display);
+      color: var(--yellow);
+      font-size: 1.2rem;
+      line-height: 1;
+    }
+    .ref-toc--mobile[open] > summary::after { content: '−'; }
+    .ref-toc--mobile > .ref-toc__list { padding: 4px 16px 16px 16px; }
+
+    /* Anchor scroll offset — sticky nav is 74px + 4px yellow border.
+       Волна 124: запас переехал в html { scroll-padding-top } в BaseLayout —
+       один источник на весь сайт. Здесь обнулено, иначе два отступа
+       складывались бы и заголовок уезжал бы почти на два экрана вниз. */
+    article :is(h2, h3)[id] { scroll-margin-top: 0; }
+
+    /* ==== Related posts =====================================================
+       Static HTML — no JS. Cards adopt the site's brutalist card treatment. */
+    .related-posts { padding-top: clamp(28px, 4vw, 44px); }
+    .related-posts__heading {
+      font-size: var(--t-h2);
+      margin-bottom: clamp(20px, 3vw, 28px);
+    }
+    .related-posts__grid {
+      display: grid;
+      gap: 18px;
+      grid-template-columns: repeat(3, 1fr);
+    }
+    @media (max-width: 900px) { .related-posts__grid { grid-template-columns: 1fr; } }
+    .related-card {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 20px 20px 22px 20px;
+      background: var(--bg-2);
+      border: 1px solid var(--line-strong);
+      text-decoration: none;
+      color: var(--ink);
+      min-height: 200px;
+    }
+    .related-card .eyebrow {
+      font-size: var(--t-xs);
+    }
+    .related-card__title {
+      font-family: var(--display);
+      text-transform: uppercase;
+      font-size: var(--t-lead);
+      line-height: 1.2;
+      margin: 0;
+    }
+    .related-card__desc {
+      color: var(--muted);
+      font-size: var(--t-md);
+      line-height: 1.5;
+      flex: 1;
+    }
+    .related-card__more {
+      font-weight: 700;
+      font-size: var(--t-sm);
+      color: var(--yellow);
+      margin-top: auto;
+    }
+  </style>
+
+  {/* Marks <html> as JS-capable synchronously, so the reading-progress bar can
+     display() as early as possible without a paint of the un-progressed state. */}
+  <script is:inline>document.documentElement.classList.add('js');</script>
+
+  <script>
+    // Client-side wiring for reading-progress + ToC. All work is scoped to the
+    // first <article> on the page (which is what страницы справочника).
+    (function () {
+      const article = document.querySelector('article');
+      if (!article) return;
+
+      // --- Reading progress -------------------------------------------------
+      const progressBar = document.querySelector('.reading-progress .bar') as HTMLElement | null;
+      if (progressBar) {
+        const update = () => {
+          const rect = article.getBoundingClientRect();
+          const articleTop = window.scrollY + rect.top;
+          const articleHeight = article.offsetHeight;
+          const viewportH = window.innerHeight;
+          // Progress = how far past the article's top we are, out of its full
+          // scrollable height. When the article is fully in view above the fold
+          // or fully passed, it clamps to 0/1.
+          const denom = Math.max(1, articleHeight - viewportH);
+          const raw = (window.scrollY - articleTop) / denom;
+          const p = Math.max(0, Math.min(1, raw));
+          progressBar.style.transform = 'scaleX(' + p.toFixed(4) + ')';
+        };
+        update();
+        window.addEventListener('scroll', update, { passive: true });
+        window.addEventListener('resize', update);
+      }
+
+      // --- Table of contents ------------------------------------------------
+      // Collect only content h2's — skip the "Частые вопросы" heading and
+      // anything inside the .faq block; that block is a list of details, not a
+      // navigable section.
+      const h2s = Array.from(article.querySelectorAll('h2')).filter((h) => {
+        return !h.closest('.faq');
+      });
+
+      if (h2s.length >= 3) {
+        // Assign ids where missing (slugify the visible text — Cyrillic-safe).
+        const slugify = (s: string) => {
+          const map: Record<string, string> = {
+            а:'a', б:'b', в:'v', г:'g', д:'d', е:'e', ё:'e', ж:'zh', з:'z',
+            и:'i', й:'y', к:'k', л:'l', м:'m', н:'n', о:'o', п:'p', р:'r',
+            с:'s', т:'t', у:'u', ф:'f', х:'h', ц:'c', ч:'ch', ш:'sh', щ:'sch',
+            ъ:'', ы:'y', ь:'', э:'e', ю:'yu', я:'ya',
+          };
+          return s.toLowerCase()
+            .replace(/[а-яё]/g, (c) => map[c] ?? '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '')
+            .slice(0, 60) || 'section';
+        };
+        const seen = new Set<string>();
+        const items: { id: string; text: string }[] = [];
+        h2s.forEach((h) => {
+          let id = h.id;
+          if (!id) {
+            let base = slugify(h.textContent || 'section');
+            id = base;
+            let n = 2;
+            while (seen.has(id)) { id = base + '-' + n; n++; }
+            h.id = id;
+          }
+          seen.add(id);
+          items.push({ id, text: (h.textContent || '').trim() });
+        });
+
+        const buildList = () => {
+          const ol = document.createElement('ol');
+          ol.className = 'ref-toc__list';
+          items.forEach((it) => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = '#' + it.id;
+            a.textContent = it.text;
+            a.dataset.tocId = it.id;
+            li.appendChild(a);
+            ol.appendChild(li);
+          });
+          return ol;
+        };
+
+        // Populate the (pre-rendered) desktop ToC.
+        const desktop = document.getElementById('ref-toc-desktop');
+        if (desktop) {
+          const existing = desktop.querySelector('.ref-toc__list');
+          if (existing) existing.replaceWith(buildList());
+          desktop.hidden = false;
+        }
+
+        // Build a mobile <details> clone and insert it at the top of the article.
+        const mobile = document.createElement('details');
+        mobile.className = 'ref-toc ref-toc--mobile';
+        const summary = document.createElement('summary');
+        summary.textContent = 'Оглавление';
+        mobile.appendChild(summary);
+        mobile.appendChild(buildList());
+        // Insert after the eyebrow / h1 / byline block — safest is after the
+        // first <p> that follows the <h1>.
+        const h1 = article.querySelector('h1');
+        let insertAfter: Element | null = h1;
+        if (h1) {
+          // Skip the byline paragraph immediately after the h1.
+          let sib = h1.nextElementSibling;
+          if (sib && sib.tagName === 'P') insertAfter = sib;
+        }
+        if (insertAfter && insertAfter.parentNode) {
+          insertAfter.parentNode.insertBefore(mobile, insertAfter.nextSibling);
+        } else {
+          article.prepend(mobile);
+        }
+
+        // --- Active heading highlighting via IntersectionObserver -----------
+        // Every ToC link (desktop AND mobile clone) with the matching data-toc-id
+        // gets .is-active. We track visible h2s and use the topmost as "active".
+        const allLinks = () => Array.from(document.querySelectorAll<HTMLAnchorElement>('a[data-toc-id]'));
+        const setActive = (id: string | null) => {
+          allLinks().forEach((a) => {
+            a.classList.toggle('is-active', a.dataset.tocId === id);
+          });
+        };
+
+        const visible = new Set<string>();
+        const io = new IntersectionObserver(
+          (entries) => {
+            entries.forEach((e) => {
+              const id = (e.target as HTMLElement).id;
+              if (!id) return;
+              if (e.isIntersecting) visible.add(id);
+              else visible.delete(id);
+            });
+            // Pick the visible h2 nearest the top; if none is visible, pick the
+            // last one whose top is above the viewport (last passed).
+            let activeId: string | null = null;
+            if (visible.size > 0) {
+              const inView = h2s.filter((h) => visible.has(h.id));
+              inView.sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+              activeId = inView[0]?.id ?? null;
+            } else {
+              let lastAbove: HTMLElement | null = null;
+              for (const h of h2s) {
+                if (h.getBoundingClientRect().top < 120) lastAbove = h;
+              }
+              activeId = lastAbove?.id ?? h2s[0]?.id ?? null;
+            }
+            setActive(activeId);
+          },
+          { rootMargin: '-96px 0px -60% 0px', threshold: 0 }
+        );
+        h2s.forEach((h) => io.observe(h));
+      }
+    })();
+  </script>
+</BaseLayout>

@@ -1,0 +1,85 @@
+---
+import BaseLayout from '../../../../layouts/BaseLayout.astro';
+import Sources from '../../../../components/Sources.astro';
+
+const title = 'Кран на режимный объект в Зеленограде — предприятия';
+const description = 'Кран на режимный объект в Зеленограде: предприятия «Микрон» и «Ангстрем» — пропускной режим на территории электронной промышленности округа.';
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Кран на режимный объект', item: 'https://moskran-servis.ru/uslugi/kran-na-rezhimnyy-obekt/' },
+    { '@type': 'ListItem', position: 3, name: 'Зеленоград', item: 'https://moskran-servis.ru/uslugi/kran-na-rezhimnyy-obekt/zelao/' },
+  ],
+};
+const serviceLd = {
+  '@context': 'https://schema.org', '@type': 'Service', serviceType: 'Аренда автокрана с пропуском для режимных объектов Зеленограда',
+  provider: { '@id': 'https://moskran-servis.ru/#organization' }, areaServed: 'Зеленоград, Москва',
+};
+---
+<BaseLayout title={title} description={description} path="/uslugi/kran-na-rezhimnyy-obekt/zelao/" ldExtra={[breadcrumbLd, serviceLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/uslugi/kran-na-rezhimnyy-obekt/">Кран на режимный объект</a><span>/</span><span>Зеленоград</span>
+  </nav>
+  <section class="section wrap" style="padding-top:8px">
+    <div class="section-head">
+      <span class="eyebrow">Режимный объект · Зеленоградский округ</span>
+      <h1>Кран на режимный объект в Зеленограде</h1>
+      <p>Пропуск на предприятия электронной промышленности Зеленограда — «Микрон», «Ангстрем» — оформляется от 1–2 рабочих дней, но к этому сроку здесь всегда добавляется плечо подачи: округ лежит за МКАД, порядка 37 километров по Ленинградскому шоссе. Второе местное ограничение — время: запрет шумных работ в жилой застройке с 23:00 до 07:00 действует и в Зеленограде, а штраф для юридического лица по московскому кодексу составляет от 40 до 80 тысяч рублей.</p>
+      <p>Зеленоград — исторический центр советской и российской микроэлектроники, здесь расположены предприятия «Микрон» и «Ангстрем». Концентрация подобных предприятий на сравнительно небольшой территории делает пропускной режим более частым сценарием для округа, чем в среднем по городу.</p>
+    </div>
+  </section>
+  <section class="section wrap" style="padding-top:0;padding-bottom:clamp(28px,4vw,44px)">
+    <table class="adm">
+      <caption>Карточка допуска: режимный объект в Зеленограде</caption>
+      <thead><tr><th scope="col">Требование</th><th scope="col">Что это значит здесь</th><th scope="col">Основание</th></tr></thead>
+      <tbody>
+        <tr><td data-label="Требование">Какой это режим</td><td data-label="Что это значит здесь">Предприятия электронной промышленности с действующим производством: пропуск оформляется по спискам, а окно работ согласуется с технологическим циклом цеха.</td><td data-label="Основание">Регламент предприятия</td></tr>
+        <tr><td data-label="Требование">Плечо подачи</td><td data-label="Что это значит здесь">Зеленоград за пределами МКАД, поэтому подача техники считается отдельной строкой, а время в пути закладывается в график смены, а не «примерно».</td><td data-label="Основание">Условия договора</td></tr>
+        <tr><td data-label="Требование">Что спрашивают на КПП</td><td data-label="Что это значит здесь">Паспорт машины с записью о техническом освидетельствовании и документ о квалификации оператора с действующей проверкой знаний.</td><td data-label="Основание">ФНП №461, п. 189</td></tr>
+        <tr><td data-label="Требование">Ограничение по времени</td><td data-label="Что это значит здесь">Зеленоград входит в состав Москвы, поэтому запрет шумных работ в жилой застройке с 23:00 до 07:00 действует и здесь; штраф для юридического лица по московскому кодексу — от 40 до 80 тысяч рублей.</td><td data-label="Основание">Закон г. Москвы №42</td></tr>
+      </tbody>
+    </table>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Специфика предприятий электронной промышленности</h2>
+    <p>Территории действующих производств электронной промышленности — режимные объекты с собственной службой безопасности, требования которой определяются внутренним регламентом конкретного предприятия. Оформление пропуска здесь не отличается принципиально от промышленных объектов в других округах (данные техники и оператора, срок согласования от 1-2 рабочих дней для типовых случаев), но стоит учитывать: у части предприятий этой отрасли — повышенное внимание к безопасности территории, что может увеличивать список требуемых данных по сравнению с обычным строительным объектом.</p>
+
+    <h2 style="margin:36px 0 18px">Логистика подачи техники — общая специфика округа</h2>
+    <p>Зеленоград территориально обособлен от основной части Москвы (порядка 37 км от МКАД по Ленинградскому шоссе) — это отдельный фактор, не связанный с пропускным режимом напрямую, но влияющий на общий срок выполнения заявки: время на подачу техники сюда больше, чем для округов внутри основной городской черты, и это стоит закладывать вместе со сроком согласования пропуска. Подробнее о логистике округа — на <a href="/geo/zelao/">гео-странице Зеленограда</a>.</p>
+
+    <h2 style="margin:36px 0 18px">Как мы это учитываем</h2>
+    <p>Для объекта на территории предприятия электронной промышленности запрашиваем контакт службы безопасности сразу после получения заявки — общий порядок оформления пропуска на режимный объект в целом описан на основной странице услуги.</p>
+  </section>
+  <section class="section wrap prose" style="padding-top:0">
+    <h2 style="margin-bottom:18px">Что уточняем до выезда</h2>
+    <p>На действующем производстве кран почти всегда работает в стеснённых условиях: между корпусами, рядом с приямками и кабельными каналами. Расстояние от откоса выемки до опор берётся из приложения к Правилам и зависит от глубины и грунта — этот расчёт делается по схеме заранее.</p>
+    <p>Второе, что уточняем, — маршрут внутри территории и высота проёмов. У предприятий с исторической застройкой габарит проезда бывает меньше, чем кажется по спутниковому снимку.</p>
+    <Sources
+      checked="12.08.2026"
+      items={[
+        { text: 'Приказ Ростехнадзора от 26.11.2020 №461 (ред. от 16.04.2026): п. 108 — площадка и уклон, п. 110 — выносные опоры, п. 111 — откос котлована, п. 112 — 30 м до провода и наряд-допуск, п. 138 — пуск башенного крана, п. 165 и 189 — освидетельствование и запись в паспорт', href: 'https://www.consultant.ru/document/cons_doc_LAW_373321/' },
+        { text: 'Закон г. Москвы от 12.07.2002 №42 и ст. 3.13 КоАП города Москвы — запрет шумных работ с 23:00 до 07:00 и размер штрафа' },
+      ]}
+    />
+  </section>
+</main>
+<style>
+  .adm { width: 100%; border-collapse: collapse; margin: 6px 0 0; font-size: var(--t-md); }
+  .adm caption { text-align: left; font-family: var(--display); text-transform: uppercase; font-size: var(--t-sm); color: var(--yellow); letter-spacing: .06em; padding-bottom: 12px; }
+  .adm th { text-align: left; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; padding: 0 14px 8px 0; border-bottom: 1px solid var(--line-strong); }
+  .adm td { padding: 13px 14px 13px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .adm td:first-child { width: 24%; font-weight: 700; }
+  .adm td:last-child { width: 24%; color: var(--muted); font-size: var(--t-md); }
+  @media (max-width: 760px) {
+    .adm, .adm tbody, .adm tr, .adm td { display: block; width: 100%; }
+    .adm thead { display: none; }
+    .adm tr { border-bottom: 1px solid var(--line-strong); padding-bottom: 10px; margin-bottom: 10px; }
+    .adm td { border: none; padding: 5px 0; }
+    .adm td::before { content: attr(data-label); display: block; font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--yellow); margin-bottom: 2px; }
+    .adm td:first-child, .adm td:last-child { width: 100%; }
+  }
+</style>
+</BaseLayout>

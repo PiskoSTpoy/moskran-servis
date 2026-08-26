@@ -1,0 +1,37 @@
+---
+// Волна 33: визуальная панель цены модели, общая для всех страниц /park/*.
+// Вынесена в компонент, чтобы разметка/CSS не расходились между 13 страницами —
+// у каждой модели меняются только value/unit/note, сам блок один и тот же.
+// Стиль сознательно повторяет уже существующий калькулятор (.pricebar__out на
+// главной и /uslugi/bashennyy-kran/): та же пара «жёлтое крупное число на
+// var(--display) + мелкая серая подпись», токены те же (--bg-2, --line-strong,
+// --yellow, --muted) — новых цветов и шрифтов не вводится.
+import PriceDisclaimer from './PriceDisclaimer.astro';
+import { PRICES_VALID_UNTIL } from '../lib/prices';
+
+export interface Props {
+  /** Отображаемая сумма без "от" и без "₽", например "17 600". */
+  value: string;
+  /** Единица тарификации для отображения, например "смена" или "мес". */
+  unit: string;
+  /** Короткое пояснение под ценой — за что она и откуда взята. */
+  note: string;
+}
+const { value, unit, note } = Astro.props;
+---
+<div class="model-price">
+  <span class="model-price__label">Ориентировочная стоимость аренды</span>
+  <p class="model-price__value">от {value} ₽<span class="model-price__unit"> / {unit}</span></p>
+  <p class="model-price__note">{note}</p>
+</div>
+{/* Волна 39: оговорка про оферту и срок действия ставок — внутри компонента,
+    а не в каждой из 13 страниц парка: так текст гарантированно один и тот же
+    и не может «потеряться» на новой модели. */}
+<PriceDisclaimer validUntil={PRICES_VALID_UNTIL} />
+<style>
+  .model-price { border: 1px solid var(--line-strong); background: var(--bg-2); padding: 16px 18px; margin: 18px 0 4px; display: grid; gap: 6px; max-width: 480px; }
+  .model-price__label { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+  .model-price__value { margin: 0; font-family: var(--display); font-weight: 400; font-size: var(--t-num); color: var(--yellow); line-height: 1.15; }
+  .model-price__unit { font-family: var(--sans); font-size: var(--t-md); color: var(--ink); font-weight: 600; text-transform: none; }
+  .model-price__note { margin: 0; font-size: var(--t-sm); color: var(--muted); line-height: 1.4; }
+</style>
