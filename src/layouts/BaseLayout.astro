@@ -388,6 +388,20 @@ const cur = (href: string) =>
        без отдельного токена под светлую тему, которой здесь нет). */
     .nav__links a[aria-current="page"] { color: var(--yellow); background: rgba(255,214,0,.14); border-color: rgba(255,214,0,.4); }
     .nav__mobile-panel a[aria-current="page"] { color: var(--yellow); background: var(--bg); box-shadow: inset 3px 0 0 0 var(--yellow); }
+    /* Волна приёмки (29.08.2026). На десктопе телефон в шапке был просто
+       последним пунктом меню — не отличался от остальных ссылок ничем, кроме
+       текста. Мобильная CTA-панель (mcta) даёт чёткий сплошной жёлтый триггер
+       «Заказать кран», а посетитель с широким экраном такого же явного призыва
+       не видел вообще: номер читался как справочная информация, не как кнопка.
+       Заливка того же --yellow, что у mcta__btn--primary — тот же сигнал
+       «нажми сюда», только в контексте шапки, а не плавающей панели. */
+    .nav__order-btn {
+      display: inline-flex; align-items: center; margin-left: 8px;
+      padding: 7px 16px; border-radius: 999px; background: var(--yellow); color: #0D0D0D;
+      font-weight: 700; text-decoration: none; white-space: nowrap;
+      transition: opacity .15s ease;
+    }
+    .nav__order-btn:hover, .nav__order-btn:focus-visible { opacity: .85; }
 
     .section { padding-block: var(--sp-md); }
     .section-head { max-width: 780px; margin-bottom: clamp(28px,4vw,44px); }
@@ -592,6 +606,7 @@ const cur = (href: string) =>
     @media (max-width: 900px) {
       .nav__links { display: none; }
       .nav__mobile { display: block; }
+      .nav__order-btn { display: none; }
     }
 
     /* --- Focus-visible: hard-edge ring everywhere, brutalist (no blur), keyboard nav gets it, mouse clicks don't --- */
@@ -940,6 +955,7 @@ const cur = (href: string) =>
         <a href="/proverka-dokumentov/" aria-current={cur('/proverka-dokumentov/')}>Проверка документов</a>
         <a href="tel:+79032690060">+7 (903) 269-00-60</a>
       </nav>
+      <a class="nav__order-btn" href="/#zayavka">Заказать кран</a>
       {/* Волна 12 (сетевая сверка): .nav__links скрывался на <=760px БЕЗ замены — с телефона
           были недостижимы /park/, /keysy/, /spravochnik/, /faq/, /documents/, /o-kompanii/, /contacts/
           (WCAG 2.4.5). Тот же дефект найден и закрыт на 8 остальных сайтах сети; здесь его
