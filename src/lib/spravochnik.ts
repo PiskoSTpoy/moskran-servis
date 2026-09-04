@@ -294,6 +294,10 @@ export const FACETS: Record<string, Facet> = {
     docs: ['putl'], objects: ['dogovor'], roles: ['zakazchik'],
     norm: '259-ФЗ, ст. 6 и приказ Минтранса №390 от 28.09.2022 — реквизиты путевого листа', terms: ['Путевой лист автокрана', 'Форма ЭСМ-2', 'Машино-часы'],
   },
+  'rabota-krana-ryadom-s-metropolitenom': {
+    docs: ['msk', 'koap'], objects: ['seti', 'ploshadka'], roles: ['otv-rabot', 'zakazchik'],
+    norm: 'Приказ Москомархитектуры от 13.03.2006 №52 — технические (40/20 м) и охранные (100 м) зоны метрополитена', terms: ['Охранная зона метрополитена', 'Техническая зона метрополитена', 'Московский метрополитен'],
+  },
 };
 
 export type Entry = {
