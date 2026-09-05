@@ -298,6 +298,10 @@ export const FACETS: Record<string, Facet> = {
     docs: ['msk', 'koap'], objects: ['seti', 'ploshadka'], roles: ['otv-rabot', 'zakazchik'],
     norm: 'Приказ Москомархитектуры от 13.03.2006 №52 — технические (40/20 м) и охранные (100 м) зоны метрополитена', terms: ['Охранная зона метрополитена', 'Техническая зона метрополитена', 'Московский метрополитен'],
   },
+  'moika-koles-so-stroyploshadki': {
+    docs: ['gost', 'msk'], objects: ['ploshadka', 'kran'], roles: ['zakazchik', 'otv-rabot'],
+    norm: 'СП 48.13330.2019, п. 7.13 — пункт очистки колёс на выезде; Кодекс города Москвы об АП, ст. 8.8', terms: ['Мойка колёс на стройплощадке', 'Пункт очистки колёс', 'Загрязнение территории транспортным средством'],
+  },
 };
 
 export type Entry = {
