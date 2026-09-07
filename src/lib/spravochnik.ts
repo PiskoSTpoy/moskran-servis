@@ -307,6 +307,10 @@ export const FACETS: Record<string, Facet> = {
     docs: ['to170', 'koap'], objects: ['kran'], roles: ['zakazchik', 'otv-soderzhanie'],
     norm: '170-ФЗ, ст. 15 — периодичность техосмотра раз в год для ТС категорий N2/N3', terms: ['Техосмотр автокрана', 'Диагностическая карта', 'ЕАИСТО'],
   },
+  'brakovka-kryuka': {
+    docs: ['fnp461', 'gost'], objects: ['kran'], roles: ['otv-soderzhanie', 'kranovshchik'],
+    norm: 'ГОСТ 6627-74 — раскрытие зева крюка на 10% и более от первоначального размера', terms: ['Браковка крюка', 'Раскрытие зева крюка', 'Предохранительный замок крюка'],
+  },
 };
 
 export type Entry = {
