@@ -326,6 +326,10 @@ export const FACETS: Record<string, Facet> = {
     docs: ['osago', 'koap'], objects: ['kran', 'dogovor'], roles: ['zakazchik', 'otv-soderzhanie'],
     norm: '40-ФЗ, ст. 4, п. 3 — исключение для ТС со скоростью не выше 20 км/ч; КоАП РФ, ст. 12.37', terms: ['ОСАГО автокрана', 'Страхование транспортного средства крана'],
   },
+  'podyom-lyudey-kranom': {
+    docs: ['fnp461', 'gost'], objects: ['kran', 'personal'], roles: ['otv-soderzhanie', 'kranovshchik'],
+    norm: 'ФНП №461 — требования к процессу подъёма и транспортировки людей; ГОСТ 33168-2014', terms: ['Подъём людей краном', 'Люлька для подъёма людей'],
+  },
 };
 
 export type Entry = {
