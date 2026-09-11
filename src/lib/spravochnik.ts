@@ -330,6 +330,10 @@ export const FACETS: Record<string, Facet> = {
     docs: ['fnp461', 'gost'], objects: ['kran', 'personal'], roles: ['otv-soderzhanie', 'kranovshchik'],
     norm: 'ФНП №461 — требования к процессу подъёма и транспортировки людей; ГОСТ 33168-2014', terms: ['Подъём людей краном', 'Люлька для подъёма людей'],
   },
+  'rabota-krana-pri-silnom-vetre': {
+    docs: ['fnp461', 'gost', 'passport'], objects: ['kran'], roles: ['kranovshchik', 'otv-soderzhanie'],
+    norm: 'ФНП №461 — приборы безопасности; паспорт ПС — предельная скорость ветра для рабочего состояния крана', terms: ['Анемометр', 'Скорость ветра для крана', 'Штормовое положение крана'],
+  },
 };
 
 export type Entry = {
