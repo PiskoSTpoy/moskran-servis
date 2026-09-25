@@ -6,7 +6,7 @@
     "dev": "astro dev",
     "build": "astro build",
     "images": "node scripts/to-webp.mjs",
-    "postbuild": "node scripts/generate-redirects.mjs && node scripts/generate-sitemap.mjs",
+    "postbuild": "node scripts/generate-redirects.mjs && node scripts/generate-sitemap.mjs && node scripts/geo2026-postbuild.mjs",
     "preview": "npm run build && wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "cf-typegen": "wrangler types"
