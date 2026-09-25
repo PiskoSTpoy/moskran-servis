@@ -72,16 +72,19 @@ if (otherPosts.length) {
   {/* Desktop ToC anchor: fixed to the right edge on wide viewports, hidden on
      mobile. Populated client-side from the article's <h2>'s. If there are <3
      headings the script leaves it hidden and doesn't render anything. */}
+  {/* Колонка стоит ПОСЛЕ статьи в DOM (визуально она position:fixed, порядок
+     не виден): иначе парсеры без CSS читают её пункты как первый абзац —
+     intro страницы превращается в «Формула цены…» из трёх слов. */}
+  <slot />
+
   <aside class="ref-toc ref-toc--desktop" id="ref-toc-desktop" aria-label="Оглавление статьи" hidden>
     <div class="ref-toc__label">На этой странице</div>
     <ol class="ref-toc__list"></ol>
   </aside>
 
-  <slot />
-
   {related.length > 0 && (
     <section class="section wrap related-posts" aria-labelledby="related-heading">
-      <h2 id="related-heading" class="related-posts__heading">Рядом в справочнике</h2>
+      <h2 id="related-heading" class="related-posts__heading">Читайте также в справочнике</h2>
       <div class="related-posts__grid">
         {related.map((p) => (
           <a class="post-card related-card" href={`/spravochnik/${p.slug}/`}>
@@ -326,6 +329,28 @@ if (otherPosts.length) {
     .ref-toc--mobile[open] > summary::after { content: '−'; }
     .ref-toc--mobile > .ref-toc__list { padding: 4px 16px 16px 16px; }
 
+    /* Статическое оглавление статей seo-2026-playbook: тот же вид, что у
+       мобильного клона, но раскрыто и есть в HTML без JS. На широком экране
+       его работу делает десктопная колонка справа — там прячем. */
+    nav.toc.ref-toc--static {
+      margin: 0 0 28px 0;
+      padding: 12px 16px 14px;
+      background: var(--bg-2);
+      border: 1px solid var(--line);
+      border-left: 3px solid transparent; background-image: var(--hazard-edge); background-repeat: no-repeat; background-size: 3px 100%; background-position: left top; background-origin: border-box;
+    }
+    nav.toc.ref-toc--static > .ref-toc__label {
+      font-family: var(--display);
+      text-transform: uppercase;
+      color: var(--yellow);
+      font-size: var(--t-sm);
+      letter-spacing: .08em;
+      margin-bottom: 6px;
+    }
+    @media (min-width: 1281px) {
+      nav.toc.ref-toc--static { display: none; }
+    }
+
     /* Anchor scroll offset — sticky nav is 74px + 4px yellow border.
        Волна 124: запас переехал в html { scroll-padding-top } в BaseLayout —
        один источник на весь сайт. Здесь обнулено, иначе два отступа
@@ -473,8 +498,12 @@ if (otherPosts.length) {
           desktop.hidden = false;
         }
 
-        // Build a mobile <details> clone and insert it at the top of the article.
+        // Статьи по seo-2026-playbook несут статический <nav class="toc"> в
+        // разметке (его видят краулеры без JS). Тогда клон не строим — иначе
+        // на мобильном будет два оглавления подряд.
+        const staticToc = article.querySelector('nav.toc');
         const mobile = document.createElement('details');
+        if (!staticToc) {
         mobile.className = 'ref-toc ref-toc--mobile';
         const summary = document.createElement('summary');
         summary.textContent = 'Оглавление';
@@ -493,6 +522,7 @@ if (otherPosts.length) {
           insertAfter.parentNode.insertBefore(mobile, insertAfter.nextSibling);
         } else {
           article.prepend(mobile);
+        }
         }
 
         // --- Active heading highlighting via IntersectionObserver -----------
