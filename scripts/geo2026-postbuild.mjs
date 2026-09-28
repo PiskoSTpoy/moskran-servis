@@ -96,6 +96,37 @@ function patchOne(path) {
     changed = true;
   }
 
+  // Шаг 2 (аудит 28.09.2026): машиночитаемая дата и имя автора в статическом HTML.
+  // Byline справочника («Инженерная служба … · обновлено …») дату выводит текстом
+  // без <time datetime>, а author в JSON-LD — голой ссылкой {"@id": …#organization},
+  // без name, поэтому парсеры не видят ни даты, ни автора. Дату берём из того же
+  // JSON-LD страницы (dateModified, иначе datePublished) — страница уже заявляет её
+  // поисковикам, в видимый текст она попадает без новых фактов. Имя — то же, что у
+  // единственного узла организации в BaseLayout (противоречия в графе нет).
+  const bylineRe = /<p class="ref-byline">([^<]*)<\/p>/;
+  const bm = html.match(bylineRe);
+  if (bm) {
+    const dm = html.match(/"dateModified":"(\d{4}-\d{2}-\d{2})/) || html.match(/"datePublished":"(\d{4}-\d{2}-\d{2})/);
+    let text = bm[1];
+    const explicit = text.match(/(\d{2})\.(\d{2})\.(\d{4})/);
+    if (explicit) {
+      const [ru, d, m, y] = explicit;
+      text = text.replace(ru, `<time datetime="${y}-${m}-${d}">${ru}</time>`);
+    } else if (dm && /обновлено в \d{4} году/.test(text)) {
+      const [y, m, d] = dm[1].split("-");
+      text = text.replace(/обновлено в \d{4} году/, `обновлено <time datetime="${dm[1]}">${d}.${m}.${y}</time>`);
+    }
+    if (text !== bm[1]) {
+      html = html.replace(bylineRe, `<p class="ref-byline">${text}</p>`);
+      changed = true;
+    }
+  }
+  const authorRef = '"author":{"@id":"https://moskran-servis.ru/#organization"}';
+  if (html.includes(authorRef)) {
+    html = html.split(authorRef).join('"author":{"@id":"https://moskran-servis.ru/#organization","@type":"Organization","name":"МОСКРАН-СЕРВИС"}');
+    changed = true;
+  }
+
   if (changed) writeFileSync(path, html, "utf8");
   return changed;
 }
