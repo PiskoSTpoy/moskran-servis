@@ -1,0 +1,142 @@
+---
+import SpravochnikLayout from '../../../layouts/SpravochnikLayout.astro';
+
+const title = 'Установка опоры СВ 95-3 автокраном: масса и подбор';
+const description = 'Опора СВ 95-3 длиной 9,5 м весит 0,75–0,9 т: источники расходятся. Как посчитать партию, какой автокран брать и чем опасна установка рядом с линиями.';
+
+const CHECKED = '06.10.2026';
+const PUBLISHED = '2026-10-06';
+const SLUG = 'ustanovka-opor-sv-95-avtokranom';
+const URL = `https://moskran-servis.ru/spravochnik/${SLUG}/`;
+
+const faqs = [
+  {
+    q: 'Сколько весит опора СВ 95-3?',
+    a: 'Стойка СВ 95-3 имеет длину 9500 мм, а её масса у разных производителей составляет 0,9 т (объём бетона 0,36 м³) и 0,75 т (0,3 м³). МОСКРАН-СЕРВИС считает партию по большему значению, 0,9 т, и уточняет фактическую массу по паспорту завода при отгрузке.',
+  },
+  {
+    q: 'Какой автокран нужен для установки СВ 95-3?',
+    a: 'Для стойки массой 0,9 т достаточно момента 48 т·м у КС-35714 «Ивановец» с шасси КамАЗ-43118. Ограничивает не масса, а высота: опору длиной 9,5 м поднимают на стропах выше её длины. МОСКРАН-СЕРВИС сверяет вылет и высоту подъёма по грузовысотной характеристике, а смена 16-тонной машины стоит 17 600 ₽.',
+  },
+  {
+    q: 'Сколько стоит поставить опору автокраном?',
+    a: 'Смена 16–20-тонного автокрана в МОСКРАН-СЕРВИС стоит 17 600 ₽ (2 200 ₽/ч × 8 ч). Число опор за смену зависит от грунта, подъезда и бурения ям, поэтому срок и цену по линии из 12 опор считают после осмотра трассы.',
+  },
+  {
+    q: 'Можно ли ставить опору рядом с действующей ЛЭП?',
+    a: 'Рядом с действующей линией МОСКРАН-СЕРВИС работает по наряду-допуску, если кран ставится ближе 30 м к проводам по ФНП №461. Охранная зона ЛЭП по ПП РФ №160 — отдельное требование: 2 м для линий до 1 кВ и 10 м для 1–20 кВ (5 м в населённых пунктах).',
+  },
+  {
+    q: 'Где у опоры СВ 95-3 точки строповки?',
+    a: 'Проверенные МОСКРАН-СЕРВИС страницы производителей не приводят положение строповочных мест и глубину заделки. Схему строповки и глубину ямы берут из паспорта и проекта на линию, а не из общих таблиц.',
+  },
+];
+
+const breadcrumbLd = {
+  '@context': 'https://schema.org', '@type': 'BreadcrumbList',
+  itemListElement: [
+    { '@type': 'ListItem', position: 1, name: 'Главная', item: 'https://moskran-servis.ru/' },
+    { '@type': 'ListItem', position: 2, name: 'Справочник', item: 'https://moskran-servis.ru/spravochnik/' },
+    { '@type': 'ListItem', position: 3, name: 'Установка опор СВ 95-3 автокраном', item: URL },
+  ],
+};
+const articleLd = {
+  '@context': 'https://schema.org', '@type': 'Article',
+  headline: title, description,
+  author: { '@type': 'Organization', '@id': 'https://moskran-servis.ru/#organization', name: 'МОСКРАН-СЕРВИС' },
+  publisher: { '@id': 'https://moskran-servis.ru/#organization' },
+  mainEntityOfPage: URL,
+  inLanguage: 'ru-RU',
+  datePublished: PUBLISHED,
+  dateModified: PUBLISHED,
+};
+const faqLd = { '@context': 'https://schema.org', '@type': 'FAQPage', mainEntity: faqs.map((f) => ({ '@type': 'Question', name: f.q, acceptedAnswer: { '@type': 'Answer', text: f.a } })) };
+
+const toc = [
+  ['massa', 'Масса и размеры СВ 95-3'],
+  ['raschet', 'Расчёт партии опор'],
+  ['kran', 'Какой кран подойдёт'],
+  ['poryadok', 'Порядок установки'],
+  ['linii', 'Работа рядом с действующими линиями'],
+  ['faq', 'Частые вопросы'],
+  ['istochniki', 'Источники'],
+];
+---
+<SpravochnikLayout title={title} description={description} path={`/spravochnik/${SLUG}/`} slug={SLUG} ldExtra={[breadcrumbLd, articleLd, faqLd]}>
+<main>
+  <nav class="crumbs wrap" aria-label="Хлебные крошки">
+    <a href="/">Главная</a><span>/</span><a href="/spravochnik/">Справочник</a><span>/</span><span>Установка опор СВ 95-3 автокраном</span>
+  </nav>
+  <article class="section wrap prose" style="padding-top:8px;max-width:820px">
+    <span class="eyebrow">Практика · Опоры освещения и ЛЭП</span>
+    <h1 style="font-size:var(--t-h1);margin:14px 0 8px">Как установить опору СВ 95-3 автокраном?</h1>
+    <div class="ref-byline meta-row">
+      <span>Автор: инженерная служба МОСКРАН-СЕРВИС</span>
+      <span>опубликовано <time datetime={PUBLISHED}>06.10.2026</time></span>
+      <span>обновлено <time datetime={PUBLISHED}>06.10.2026</time></span>
+      <span>факты проверены {CHECKED}</span>
+      <span>5 мин чтения</span>
+    </div>
+
+    <p>Железобетонная стойка СВ 95-3 имеет длину 9,5 м, а её масса по каталогам заводов расходится: 0,9 т у одних и 0,75 т у других. МОСКРАН-СЕРВИС считает партию по большему значению и проверяет фактическую массу по паспорту. Для одной опоры хватает 16-тонного автокрана, но высота подъёма 9,5 м требует расчёта по грузовысотной характеристике.</p>
+
+    <nav class="toc ref-toc ref-toc--static" aria-label="Содержание">
+      <div class="ref-toc__label">Содержание</div>
+      <ol class="ref-toc__list">
+        {toc.map(([id, text]) => <li><a href={`#${id}`} data-toc-id={id}>{text}</a></li>)}
+      </ol>
+    </nav>
+
+    <h2 id="massa" style="margin:36px 0 16px">Масса и размеры СВ 95-3</h2>
+    <p>Вибрированная стойка СВ 95-3 предназначена для опор наружного освещения и воздушных линий, её длина 9500 мм, изгибающий момент 3 тс·м. По данным «Опор Юга» она весит 900 кг при объёме бетона 0,36 м³, а по каталогу «Корунд Вест» — 750 кг при 0,3 м³. МОСКРАН-СЕРВИС видит в этом разные варианты изделия с одинаковой плотностью около 2,5 т/м³, а не ошибку одного из каталогов.</p>
+    <div class="table-wrap" style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Параметр</th><th>Опоры Юга</th><th>Корунд Вест</th></tr></thead>
+        <tbody>
+          <tr><td>Длина</td><td>9500 мм</td><td>9500 мм</td></tr>
+          <tr><td>Масса</td><td>900 кг</td><td>750 кг</td></tr>
+          <tr><td>Объём бетона</td><td>0,36 м³</td><td>0,3 м³</td></tr>
+          <tr><td>Изгибающий момент</td><td>3 тс·м</td><td>3 тс·м</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h2 id="raschet" style="margin:36px 0 16px">Расчёт партии опор</h2>
+    <p>Линия из 12 опор по 0,9 т весит 10,8 т, а по 0,75 т — 9 т. Разница в 1,8 т (20 %) влияет на число рейсов и выбор борта. Кран МОСКРАН-СЕРВИС поднимает опоры по одной, поэтому на выбор машины действует масса единицы, а на логистику — масса партии. МОСКРАН-СЕРВИС рекомендует закладывать большее значение и не пересчитывать после приезда машины.</p>
+
+    <h2 id="kran" style="margin:36px 0 16px">Какой кран подойдёт</h2>
+    <p>КС-35714 «Ивановец» с моментом 48 т·м справляется с массой 0,9 т, потому что запас по моменту многократный. Предел здесь задаёт высота: стойку длиной 9,5 м поднимают в вертикальное положение, и крюк должен уйти выше её длины на величину стропов и подвески. МОСКРАН-СЕРВИС сверяет это по <a href="/spravochnik/gruzovysotnaya-harakteristika/" style="color:var(--yellow)">грузовысотной характеристике</a> конкретной машины.</p>
+    <p>Смена 16–20-тонного автокрана в МОСКРАН-СЕРВИС стоит 17 600 ₽ (2 200 ₽/ч × 8 ч). Если опора стоит за забором или в глубине участка, момент вырастает вместе с вылетом, и тогда сравнивают классы по материалу <a href="/spravochnik/avtokran-16-ili-25-tonn/" style="color:var(--yellow)">«Автокран 16 или 25 тонн»</a>. Манипуляторы МОСКРАН-СЕРВИС в парке не держит: для них подбираем исполнителя через партнёров.</p>
+
+    <h2 id="poryadok" style="margin:36px 0 16px">Порядок установки</h2>
+    <p>ФНП №461 требует выполнять подъём по схеме строповки, а масса и положение строп определяются паспортом изделия. МОСКРАН-СЕРВИС просит у заказчика проект линии и паспорт партии до выезда: в проверенных страницах производителей глубина заделки и места строповки не указаны. Схемы подробно разобраны в материале о <a href="/spravochnik/shemy-stropovki-gruzov/" style="color:var(--yellow)">схемах строповки грузов</a>.</p>
+    <p>Яму бурят заранее, опору заводят в неё стрелой крана и выставляют по вертикали до засыпки. Стропальщик МОСКРАН-СЕРВИС работает по сигналам, описанным в справочнике <a href="/spravochnik/signaly-stropalshchika/" style="color:var(--yellow)">сигналов стропальщика</a>, а люди остаются вне <a href="/spravochnik/opasnaya-zona-krana/" style="color:var(--yellow)">опасной зоны крана</a>. Длинномерная стойка парусит, поэтому при ветре подъём приостанавливают по правилам из материала о <a href="/spravochnik/rabota-krana-pri-silnom-vetre/" style="color:var(--yellow)">работе при сильном ветре</a>.</p>
+
+    <h2 id="linii" style="margin:36px 0 16px">Работа рядом с действующими линиями</h2>
+    <p>Охранная зона ЛЭП до 1 кВ составляет 2 м, а для линий 1–20 кВ — 10 м (5 м в населённых пунктах) по ПП РФ №160, как разобрано в материале об <a href="/spravochnik/ohrannaya-zona-lep-i-30-metrov-fnp-461/" style="color:var(--yellow)">охранных зонах ЛЭП</a>. Новая опора 9,5 м, поднятая рядом с проводами, делает стрелу с грузом самым высоким предметом на площадке. МОСКРАН-СЕРВИС оформляет работу по <a href="/spravochnik/rabota-krana-ryadom-s-lep/" style="color:var(--yellow)">наряду-допуску</a> и отказывается от подъёма, пока линия не отключена или не оформлено согласование.</p>
+
+    <h2 class="ref-takeaway" style="margin:36px 0 18px">Коротко: опоры СВ 95-3</h2>
+    <ul>
+      <li>СВ 95-3: длина 9500 мм, масса 0,75–0,9 т в зависимости от каталога.</li>
+      <li>Партию из 12 опор считают по 0,9 т — 10,8 т.</li>
+      <li>16-тонный КС-35714 по моменту достаточен, высоту проверяют по характеристике.</li>
+      <li>Глубину заделки и точки строповки берут из паспорта и проекта.</li>
+      <li>Рядом с проводами — наряд-допуск и проверка охранной зоны.</li>
+    </ul>
+
+    <div class="faq" style="margin-top:44px">
+      <h2 id="faq" style="margin-bottom:18px">Частые вопросы</h2>
+      {faqs.map((f) => (<details class="faq__item"><summary>{f.q}</summary><p>{f.a}</p></details>))}
+    </div>
+
+    <h2 id="istochniki" style="margin:36px 0 16px">Источники · проверено {CHECKED}</h2>
+    <ul>
+      <li><a href="https://op-ug.ru/produkciya/stoyki-sv/zhelezobetonnaya-vibrirovannaya-stoyka-sv-95-3/" target="_blank" rel="noopener" style="color:var(--yellow)">Стойка СВ 95-3 — «Опоры Юга»</a> — длина, масса 900 кг, объём 0,36 м³, момент 3 тс·м.</li>
+      <li><a href="https://korundwest.ru/catalog/opory-zhelezobetonnye-sv/opory-zhelezobetonnye-sv-95-3/" target="_blank" rel="noopener" style="color:var(--yellow)">Опоры СВ 95-3 — «Корунд Вест»</a> — масса 750 кг, объём 0,3 м³.</li>
+      <li><a href="https://kamaz.ru/production/special/avtokrany/avtomobilnyy-kran-ks-35714k-2/" target="_blank" rel="noopener" style="color:var(--yellow)">КС-35714К-2 — kamaz.ru</a> — момент 48 т·м, стрела 8–18 м.</li>
+      <li><a href="/spravochnik/ohrannaya-zona-lep-i-30-metrov-fnp-461/" style="color:var(--yellow)">Охранные зоны ЛЭП — справочник МОСКРАН-СЕРВИС</a> — ПП РФ №160 и ФНП №461.</li>
+    </ul>
+  </article>
+  <section class="section wrap"><a class="btn" href="/uslugi/arenda-avtokrana-16-25-tonn/">Аренда автокрана 16–25 тонн →</a></section>
+</main>
+</SpravochnikLayout>
