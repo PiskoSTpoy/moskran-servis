@@ -533,6 +533,18 @@ export const FACETS: Record<string, Facet> = {
     docs: ['passport'], objects: ['kran', 'gruz', 'ploshadka'], roles: ['zakazchik'],
     norm: 'Вылет — по плану от оси вращения до вертикали крюка; допустимую массу определяет таблица паспорта; КС-55732 — 90 т·м, контур 5,75×6,3 м (cmz.ru)', terms: ['Как определить вылет стрелы', 'Вылет автокрана', 'Расчёт вылета до места установки'],
   },
+  'pogruzka-razgruzka-avtomashin-avtokranom': {
+    docs: ['fnp461'], objects: ['kran', 'gruz', 'strop'], roles: ['otv-rabot', 'stropalshchik', 'zakazchik'],
+    norm: 'ФНП №461, п. 124–127: люди в кабине и кузове, равновесие, пакеты труб, работа без маркировки массы', terms: ['Погрузка и разгрузка автомашин краном', 'Разгрузка фуры автокраном', 'Строповка пакета труб'],
+  },
+  'obyazannosti-organizacii-pri-vydelenii-avtokrana': {
+    docs: ['fnp461', 'passport'], objects: ['kran', 'personal'], roles: ['zakazchik', 'otv-soderzhanie'],
+    norm: 'ФНП №461, п. 121–122: табличка на ПС, ответственность организации, выделившей ПС, ППР, стропы, приборы безопасности', terms: ['Табличка на автокране', 'Обязанности эксплуатирующей организации', 'Ответственность организации, выделившей кран'],
+  },
+  'montazh-stenovyh-paneley-i-vitrazhey-avtokranom': {
+    docs: ['fnp461'], objects: ['kran', 'gruz', 'ploshadka'], roles: ['otv-rabot', 'zakazchik'],
+    norm: 'ФНП №461, п. 159, 160, 163: парусные конструкции и монтаж у эксплуатируемых зданий — по ППР под руководством ИТР', terms: ['Монтаж стеновых панелей', 'Монтаж витражей краном', 'Парусные конструкции'],
+  },
 };
 
 export type Entry = {
